@@ -1,0 +1,17 @@
+{
+  "name": "nebula-macos-web-desktop",
+  "private": true,
+  "description": "A browser-based macOS-inspired desktop with 100+ apps, 50 games, and a Node.js backend.",
+  "scripts": {
+    "check:html": "node check.js",
+    "check:games": "node -c games-center.js",
+    "check:desktop": "node -c desktop-enhancements.js",
+    "check:catalog": "node -c catalog-apps.js",
+    "check:features": "node -c feature-catalog-core.js && node -c feature-lab.js",
+    "check:backend": "node -c nebula-backend/server.js && node -c nebula-backend/routes/features.js",
+    "verify": "npm run check:html && npm run check:games && npm run check:desktop && npm run check:catalog && npm run check:features && npm run check:backend"
+  },
+  "dependencies": {
+    "puppeteer": "^24.40.0"
+  }
+}

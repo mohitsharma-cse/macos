@@ -2,6 +2,8 @@ const router    = require('express').Router();
 const nodemailer = require('nodemailer');
 const Message   = require('../models/Message');
 const { body, validationResult } = require('express-validator');
+const mongoose = require('mongoose');
+const { isDbReady, addMessage, getMessages } = require('../lib/fallbackStore');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -21,7 +23,9 @@ router.post('/',
     const { name, email, company, message, type } = req.body;
 
     try {
-      const msg = await Message.create({ name, email, company, message, type, ip: req.ip });
+      const msg = isDbReady(mongoose)
+        ? await Message.create({ name, email, company, message, type, ip: req.ip })
+        : addMessage({ name, email, company, message, type, ip: req.ip });
 
       // Email to portfolio owner
       if (process.env.GMAIL_USER) {
@@ -48,8 +52,11 @@ router.post('/',
 
 // Get all messages (admin)
 router.get('/', require('../middleware/auth'), async (req, res) => {
-  const msgs = await Message.find().sort({ timestamp: -1 }).limit(100);
-  res.json(msgs);
+  if (isDbReady(mongoose)) {
+    const msgs = await Message.find().sort({ timestamp: -1 }).limit(100);
+    return res.json(msgs);
+  }
+  res.json(getMessages().slice(0, 100));
 });
 
 module.exports = router;

@@ -6,10 +6,23 @@ const helmet    = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+const FRONTEND_ORIGINS = (process.env.FRONTEND_URL || '*')
+  .split(',')
+  .map(value => value.trim())
+  .filter(Boolean);
+const allowAllOrigins = FRONTEND_ORIGINS.includes('*');
 
 /* ── Middleware ── */
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: process.env.FRONTEND_URL || '*', credentials: true }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowAllOrigins || FRONTEND_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS origin not allowed'));
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -36,14 +49,17 @@ app.use('/api/auth',                     require('./routes/auth'));
 app.use('/api/visitors',                 require('./routes/visitors'));
 app.use('/api/messages', contactLimiter, require('./routes/messages'));
 app.use('/api/analytics',                require('./routes/analytics'));
+app.use('/api/features',                 require('./routes/features'));
 
 /* ── Health Check ── */
-app.get('/health', (req, res) => res.json({
+const healthHandler = (req, res) => res.json({
   status: 'ok',
   uptime: process.uptime(),
   timestamp: new Date().toISOString(),
   version: '2.0.25'
-}));
+});
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 /* ── SSE — Real-time Visitor Count ── */
 const sseClients = new Set();

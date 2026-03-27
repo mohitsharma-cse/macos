@@ -1,7 +1,7 @@
 {
   "name": "nebula-backend",
   "version": "2.0.25",
-  "description": "NebulaOS Portfolio Backend",
+  "description": "Backend for the Nebula macOS-style web desktop",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

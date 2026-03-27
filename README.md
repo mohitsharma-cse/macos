@@ -1,123 +1,127 @@
-# 🖥️ PortfolioOS — Full Stack Developer Portfolio
+# Nebula macOS Web Desktop
 
-> An Ubuntu-style interactive OS portfolio with AI features, built as a single HTML file + Node.js backend.
+A browser-based macOS-inspired desktop experience with a large app catalog, a playable game center, and a Node.js backend for AI, analytics, visitors, messages, and feature APIs.
 
----
+## Highlights
 
-## 🗂️ Project Structure
+- macOS-style desktop UI with windows, dock, launcher, and desktop interactions
+- 100+ app catalog across system, productivity, developer, creative, lifestyle, and games
+- 50 playable games inside the Games app
+- Feature Lab app with a 10,000-item roadmap catalog
+- unified `nebula-backend` for auth, AI, messages, analytics, visitors, and feature routes
+- backend-safe frontend behavior when API base is not configured
+- in-memory backend fallback for local development when MongoDB is unavailable
 
+## Main project files
+
+```text
+.
+|-- index.html
+|-- catalog-apps.js
+|-- games-center.js
+|-- desktop-enhancements.js
+|-- feature-catalog-core.js
+|-- feature-lab.js
+|-- APP_INVENTORY.md
+|-- FEATURE_CATALOG.md
+|-- DEPLOYMENT.md
+`-- nebula-backend/
+    |-- server.js
+    |-- package.json
+    |-- .env.example
+    |-- lib/
+    `-- routes/
 ```
-dj rajesh web page/
-├── index.html                  ← Frontend (deploy to Netlify)
-└── portfolio-backend/          ← Backend (deploy to Railway)
-    ├── server.js
-    ├── package.json
-    ├── .env.example            ← Copy to .env and fill in values
-    ├── routes/
-    │   ├── ai.js               (Gemini AI + HuggingFace)
-    │   ├── auth.js             (Admin JWT login)
-    │   ├── visitor.js          (Anonymous tracking)
-    │   ├── messages.js         (Contact form + Nodemailer)
-    │   └── analytics.js        (Admin dashboard data)
-    ├── models/
-    │   ├── Visitor.js
-    │   ├── Message.js
-    │   └── Chat.js
-    └── middleware/
-        ├── auth.js             (JWT verify)
-        └── rateLimit.js        (IP throttling)
+
+## Included experiences
+
+- Finder, Safari, Mail, Messages, Settings, Calculator, Terminal, VS Code, Weather, Clock, Camera, Music, Photos, App Store, Activity Monitor, and more
+- template-driven apps such as TextEdit, Pages, Numbers, Keynote, JSON Lab, Regex Lab, Passwords, Dictionary, Unit Converter, and Preview
+- 50-game hub covering board, puzzle, quiz, reflex, math, word, and duel-style mini games
+- Feature Lab for browsing 10,000 possible upgrades to the platform
+
+See `APP_INVENTORY.md` for the full app list and `FEATURE_CATALOG.md` for the roadmap system.
+
+## Quick start
+
+### Frontend
+
+Open `index.html` directly in the browser for basic local use.
+
+If you want the backend-connected experience, serve the folder with a static server and point the frontend at your backend URL before page load:
+
+```html
+<script>
+  window.NEBULA_API_BASE = "http://localhost:3000";
+</script>
 ```
 
----
-
-## 🔑 Step 1 — Get Your Free API Keys
-
-| Service | URL | What it does |
-|---------|-----|-------------|
-| **Google Gemini** | [aistudio.google.com](https://aistudio.google.com) | AI terminal, code review, chatbot |
-| **HuggingFace** | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) | AI wallpaper generation |
-| **MongoDB Atlas** | [mongodb.com/atlas](https://www.mongodb.com/atlas) | Free 512MB database |
-| **Gmail App Password** | [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) | Contact form emails |
-
----
-
-## ⚙️ Step 2 — Configure Environment Variables
+### Backend
 
 ```bash
-cd portfolio-backend
-cp .env.example .env
+cd nebula-backend
+npm install
+npm start
 ```
 
-Edit `.env`:
-```env
-MONGODB_URI=mongodb+srv://user:pass@cluster0.xxxxx.mongodb.net/portfolioDB
-JWT_SECRET=any_long_random_string_here
-ADMIN_PASSWORD_HASH=    # generate with: node -e "const b=require('bcryptjs');b.hash('yourpassword',10).then(console.log)"
-GEMINI_API_KEY=AIzaSy...
-HUGGINGFACE_API_KEY=hf_...
-GMAIL_USER=your@gmail.com
-GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
-PORT=3000
-FRONTEND_URL=https://yourname.netlify.app
+The backend runs on `http://localhost:3000` by default.
+
+## Backend environment
+
+Copy `nebula-backend/.env.example` to `nebula-backend/.env` and fill in:
+
+- `MONGODB_URI`
+- `JWT_SECRET`
+- `ADMIN_PASSWORD_HASH`
+- `OPENROUTER_API_KEY`
+- `GMAIL_USER`
+- `GMAIL_APP_PASSWORD`
+- `PORT`
+- `FRONTEND_URL`
+
+`FRONTEND_URL` can be a comma-separated list in production.
+
+## Useful routes
+
+- `GET /health`
+- `GET /api/health`
+- `GET /api/features/stats`
+- `GET /api/features?limit=10`
+- `POST /api/visitors/log`
+- `GET /api/live`
+
+## Verification
+
+From the project root:
+
+```bash
+npm install
+npm run verify
 ```
 
----
+That runs the basic syntax and frontend validation checks.
 
-## 🚀 Step 3 — Deploy Backend to Railway (5 min)
+## Deployment
 
-1. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
-2. Push this `portfolio-backend` folder to a GitHub repo
-3. Railway auto-detects Node.js and runs `npm start`
-4. In Railway dashboard → Variables tab → paste all your `.env` values
-5. Copy the generated Railway URL (e.g. `https://portfolio-backend.up.railway.app`)
+- Frontend: Netlify, Vercel, or GitHub Pages
+- Backend: Railway, Render, or Fly.io
+- Database: MongoDB Atlas
 
----
+See `DEPLOYMENT.md` for the production checklist.
 
-## 🌐 Step 4 — Deploy Frontend to Netlify (2 min)
+## Repository docs
 
-1. Go to [netlify.com](https://netlify.com) → New site → Drag & Drop
-2. Drag the `index.html` file into the deploy box
-3. Netlify gives you a URL like `https://yourname.netlify.app`
-4. Update `FRONTEND_URL` in Railway variables to this URL
+- `APP_INVENTORY.md` - current app list and roadmap phases
+- `FEATURE_CATALOG.md` - 10,000-item feature catalog overview
+- `DEPLOYMENT.md` - hosting and environment setup
 
----
+## Status
 
-## 🔗 Step 5 — Connect Frontend to Backend
+The project now has a strong foundation:
 
-In `index.html`, find the line:
-```js
-const API_BASE = 'http://localhost:3000'; // change this!
-```
-Update it to your Railway URL:
-```js
-const API_BASE = 'https://portfolio-backend.up.railway.app';
-```
+- large app catalog
+- real game center
+- backend unification
+- feature roadmap system
 
----
-
-## 🔒 Security Features
-
-- ✅ CORS restricted to your Netlify domain
-- ✅ Helmet.js HTTP security headers
-- ✅ AI endpoints: 10 req/hour/IP
-- ✅ Contact form: 3 msg/day/IP  
-- ✅ Input validation with express-validator
-- ✅ JWT admin tokens expire in 24h
-- ✅ API keys never sent to frontend
-
----
-
-## 🎮 Features Quick Reference
-
-| Feature | How to access |
-|---------|--------------|
-| Terminal AI | Type `ai <your question>` in Terminal app |
-| Code Review | Run code → click "Review with AI" button |
-| AI Chatbot | Open "Chat" app from desktop |
-| Admin Panel | Type `admin` in Terminal, enter password |
-| Change Wallpaper | Right-click desktop → Change Wallpaper |
-| Konami Code | ↑↑↓↓←→←→BA |
-
----
-
-*Built with ❤️ by Mohit — PortfolioOS v2.0.25*
+The next major phase is deeper polish for the highest-visibility apps like Finder, Safari, Mail, Messages, Settings, and VS Code.

@@ -889,20 +889,23 @@
 
         .lp-grid {
             display: grid;
-            grid-template-columns: repeat(7, 90px);
+            grid-template-columns: repeat(7, minmax(80px, 100px));
             gap: 24px 16px;
             justify-content: center;
             overflow-y: auto;
             flex: 1;
+            width: min(94vw, 820px);
         }
 
         .lp-app {
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: flex-start;
             gap: 8px;
             cursor: pointer;
             transition: transform 0.15s ease;
+            width: 90px;
         }
 
         .lp-app:hover {
@@ -910,10 +913,11 @@
         }
 
         .lp-app img {
-            width: 72px;
-            height: 72px;
-            border-radius: 16px;
+            width: 66px;
+            height: 66px;
+            border-radius: 15px;
             object-fit: cover;
+            flex-shrink: 0;
         }
 
         .lp-app-name {
@@ -925,6 +929,8 @@
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 80px;
+            width: 80px;
+            display: block;
         }
 
         .lp-app.hidden {
@@ -2760,6 +2766,77 @@
             cursor: pointer;
         }
     </style>
+<style id="dock-hierarchy-fix">
+/* ======= DOCK AUTO-HIDE FIX ======= */
+.dock-container {
+  position: fixed !important;
+  bottom: 0px !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(0%) !important;
+  z-index: 1000;
+  transition: transform 350ms cubic-bezier(0.34, 1.20, 0.64, 1), opacity 250ms ease !important;
+  opacity: 1;
+  pointer-events: all;
+  will-change: transform, opacity;
+}
+
+/* User's full auto-hide system or settings-based auto-hide */
+.dock-container.autohide {
+  transform: translateX(-50%) translateY(100%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.dock-container.autohide.show-dock,
+.dock-container.dock-visible {
+  transform: translateX(-50%) translateY(0%) !important;
+  opacity: 1 !important;
+  pointer-events: all !important;
+}
+
+body.has-maximized .dock-container:not(.autohide) {
+  transform: translateX(-50%) translateY(120%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: 5 !important;
+}
+
+body.has-maximized .dock-container.dock-visible:not(.autohide) {
+  transform: translateX(-50%) translateY(0%) !important;
+  opacity: 1 !important;
+  pointer-events: all !important;
+  bottom: 6px !important;
+  z-index: 1000 !important;
+}
+
+#dock-trigger {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  z-index: 999;
+  background: transparent;
+  pointer-events: all;
+}
+
+/* FIX 3 — COMPLETE Z-INDEX HIERARCHY */
+#desktop, .desktop { z-index: 0; }
+.desktop-icon, .desktop-widget { z-index: 10; }
+.os-window { z-index: 100; }
+.os-window.focused { z-index: 200; }
+.os-window.maximized { z-index: 500 !important; border-radius: 0 !important; top: 28px !important; left: 0 !important; width: 100vw !important; height: calc(100vh - 28px) !important; }
+.dock-container { z-index: 1000; }
+body.has-maximized .dock-container { z-index: 5 !important; }
+.context-menu { z-index: 50000; }
+#spotlight-overlay, .spotlight-overlay { z-index: 60000; }
+#launcher-overlay { z-index: 70000; }
+.notification { z-index: 80000; }
+.menu-dropdown, .menubar-panel { z-index: 99998; }
+.menu-bar { z-index: 99999 !important; }
+.system-dialog { z-index: 999999; }
+.dock-tooltip { z-index: 9999; }
+</style>
 </head>
 
 <body>
@@ -2818,7 +2895,7 @@
             </div>
             <div class="lock-user" onclick="transitionToLogin()">
                 <div class="login-avatar" style="border:none; background:transparent;">
-                    <img src="assets/profile.jpg" alt="Profile" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.src='https://ui-avatars.com/api/?name=Legend+Gaming&background=random'">
+                    <img src="assets/profile.svg" alt="Profile" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.src='https://ui-avatars.com/api/?name=Legend+Gaming&background=random'">
                 </div>
                 <div class="lock-user-name">Legend Gaming</div>
                 <div class="lock-hint">Touch ID or Enter Password</div>
@@ -2832,7 +2909,7 @@
             </div>
             
             <div class="login-avatar" title="Change Profile Picture" style="border:none; background:transparent;">
-                <img src="assets/profile.jpg" alt="Profile" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.src='https://ui-avatars.com/api/?name=Legend+Gaming&background=random'">
+                <img src="assets/profile.svg" alt="Profile" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.src='https://ui-avatars.com/api/?name=Legend+Gaming&background=random'">
             </div>
             <div class="login-user-name-pass">Legend Gaming</div>
             
@@ -3472,10 +3549,98 @@
             }, 1200);
         });
 
-        /* === STEP 4: DESKTOP & MENUBAR CLOCK === */
-        // This section is now handled by the new updateTime() function.
+        /* === VS CODE / MONACO editor SUPPORT === */
+        const PISTON_LANGUAGES = {
+            python:     { name: 'Python',     lang: 'python',     version: '3.10.0', defaultCode: 'print("Hello from NebulaOS!")\n\nfor i in range(5):\n    print(f"Counting: {i}")' },
+            javascript: { name: 'JavaScript', lang: 'javascript', version: '18.15.0', defaultCode: 'console.log("Hello from NebulaOS!");\n\n[1, 2, 3].map(n => n * 2).forEach(v => console.log(v));' },
+            cpp:        { name: 'C++',        lang: 'cpp',        version: '10.2.0',  defaultCode: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello from NebulaOS C++!" << endl;\n    return 0;\n}' },
+            java:       { name: 'Java',       lang: 'java',       version: '15.0.2',  defaultCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello from NebulaOS Java!");\n    }\n}' },
+            ruby:       { name: 'Ruby',       lang: 'ruby',       version: '3.0.1',  defaultCode: 'puts "Hello from NebulaOS Ruby!"\n5.times { |i| puts i }' }
+        };
 
+        function buildLanguageSelector() {
+            const sel = document.getElementById('vscode-lang-select');
+            if(!sel) return;
+            sel.innerHTML = Object.entries(PISTON_LANGUAGES).map(([id, info]) => 
+                `<option value="${id}">${info.name}</option>`
+            ).join('');
+            sel.onchange = (e) => switchLanguage(e.target.value);
+        }
 
+        function switchLanguage(langId) {
+            if(!PISTON_LANGUAGES[langId]) return;
+            const info = PISTON_LANGUAGES[langId];
+            if(window.monacoEditor) {
+                const model = window.monacoEditor.getModel();
+                monaco.editor.setModelLanguage(model, info.lang);
+                window.monacoEditor.setValue(info.defaultCode);
+            }
+        }
+
+        async function runCode() {
+            if(!window.monacoEditor) return;
+            const out = document.getElementById('vscode-output');
+            const sel = document.getElementById('vscode-lang-select');
+            const langId = sel ? sel.value : 'python';
+            const info = PISTON_LANGUAGES[langId];
+            const code = window.monacoEditor.getValue();
+
+            switchOutputTab('output');
+            out.innerHTML = `<span style="color:#23d18b">/home/nebula/run ${info.lang} main...</span>\n`;
+
+            try {
+                const res = await fetch('https://emkc.org/api/v2/piston/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        language: info.lang,
+                        version: info.version,
+                        files: [{ name: 'main', content: code }]
+                    })
+                });
+                const data = await res.json();
+                if(data.run && (data.run.output || data.run.stderr)) {
+                    out.innerHTML += (data.run.output || '') + (data.run.stderr || '');
+                } else {
+                    out.innerHTML += `\n<span style="color:rgba(255,255,255,0.4)">[Process exited with no output]</span>`;
+                }
+            } catch(err) {
+                out.innerHTML += `<span style="color:#ff3b30">Error: ${err.message}</span>`;
+            }
+            out.scrollTop = out.scrollHeight;
+        }
+
+        function switchOutputTab(tab) {
+            ['output', 'problems', 'stdin'].forEach(t => {
+                const el = document.getElementById(`vscode-${t}`);
+                const btn = document.getElementById(`tab-${t}`);
+                if(el) el.style.display = (t === tab ? 'flex' : 'none');
+                if(btn) {
+                    btn.style.borderBottom = (t === tab ? '2px solid #23d18b' : '2px solid transparent');
+                    btn.style.color = (t === tab ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)');
+                }
+            });
+        }
+
+        async function aiReviewCode() {
+            if(!window.monacoEditor) return;
+            const code = window.monacoEditor.getValue();
+            const out = document.getElementById('vscode-output');
+            switchOutputTab('output');
+            out.innerHTML = `<span style="color:#8b5cf6">✨ AI Reviewing code...</span>\n`;
+            
+            try {
+                const res = await fetch(API_BASE + '/api/ai/review', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, language: document.getElementById('vscode-lang-select')?.value || 'javascript' })
+                });
+                const data = await res.json();
+                out.innerHTML += `<span style="color:#a78bfa">${data.explanation || (data.improvements || []).join('<br>') || 'Done.'}</span>`;
+            } catch(e) {
+                out.innerHTML += `<span style="color:#ff3b30">Backend unavailable.</span>`;
+            }
+        }
 
         /* === STEP 5: WINDOW MANAGER (THE CORE) === */
         const os = {
@@ -3557,7 +3722,7 @@
 
                 if (appName === 'vscode') {
                     return `
-                    <div class="code-container">
+                    <div class="code-container" id="vscode-window" style="display:flex; height:100%;">
                         <div class="code-activity-bar">
                             <i data-lucide="files" class="code-activity-icon active"></i>
                             <i data-lucide="search" class="code-activity-icon"></i>
@@ -3570,44 +3735,155 @@
                             <div class="code-explorer">
                                 <div style="font-weight:bold; margin-bottom:5px; color:#fff;"><i data-lucide="chevron-down" style="width:14px;height:14px;display:inline-block;vertical-align:bottom;"></i> PRESECTORS</div>
                                 <div style="padding-left: 15px;">
-                                    <div class="code-file"><i data-lucide="folder" class="code-file-icon" color="#eab308"></i> __main__</div>
-                                    <div class="code-file active"><i data-lucide="file-code-2" class="code-file-icon" color="#3b82f6"></i> main.py</div>
-                                    <div class="code-file"><i data-lucide="file" class="code-file-icon" color="#858585"></i> .gitignore</div>
-                                    <div class="code-file"><i data-lucide="file-text" class="code-file-icon" color="#10b981"></i> README.md</div>
+                                    <div class="code-file active" id="vscode-file-name"><i data-lucide="file-code-2" class="code-file-icon" color="#3b82f6"></i> main.src</div>
                                 </div>
                             </div>
                         </div>
-                        <div class="code-main">
-                            <div class="code-tabs">
-                                <div class="code-tab">
-                                    <i data-lucide="file-code-2" class="code-file-icon" color="#3b82f6"></i> main.py 
-                                    <i data-lucide="x" class="code-tab-close" style="width:12px;height:12px;margin-left:5px;"></i>
-                                </div>
+                        <div class="code-main" style="display:flex; flex-direction:column; height:100%; flex:1; min-width:0;">
+                            <!-- Top toolbar -->
+                            <div id="vscode-toolbar" style="
+                              display:flex;align-items:center;gap:8px;
+                              padding:6px 12px;
+                              background:rgba(0,0,0,0.2);
+                              border-bottom:0.5px solid rgba(255,255,255,0.06);
+                              flex-shrink:0;
+                            ">
+                              <button id="vscode-run-btn" onclick="runCode()" style="
+                                background:#23d18b;border:none;color:#000;
+                                padding:5px 14px;border-radius:6px;
+                                font-size:13px;font-weight:600;
+                                cursor:pointer;display:flex;
+                                align-items:center;gap:6px;
+                                transition:background 100ms,transform 100ms;
+                              "
+                              onmouseenter="this.style.background='#1fba79'"
+                              onmouseleave="this.style.background='#23d18b'"
+                              onmousedown="this.style.transform='scale(0.95)'"
+                              onmouseup="this.style.transform='scale(1)'">
+                                ▶ Run
+                              </button>
+
+                              <select id="vscode-lang-select" style="
+                                background:rgba(255,255,255,0.08);
+                                border:0.5px solid rgba(255,255,255,0.15);
+                                color:white;padding:5px 10px;
+                                border-radius:6px;font-size:12px;
+                                cursor:pointer;outline:none;
+                                font-family:-apple-system,sans-serif;
+                              "></select>
+
+                              <span style="
+                                font-size:11px;color:rgba(255,255,255,0.25);
+                                margin-left:4px;
+                              ">⌘↵ to run</span>
+
+                              <button onclick="document.getElementById('vscode-output').innerHTML=''"
+                                style="
+                                  margin-left:auto;background:transparent;
+                                  border:0.5px solid rgba(255,255,255,0.15);
+                                  color:rgba(255,255,255,0.5);padding:4px 10px;
+                                  border-radius:6px;font-size:11px;cursor:pointer;
+                                ">Clear</button>
                             </div>
-                            <div class="code-editor-area">
-                                <button class="code-run-btn" onclick="runPythonCode()"><i data-lucide="play" style="width:14px;height:14px;"></i> Run Code</button>
-                                <div id="monaco-container"></div>
+
+                            <div id="monaco-container" style="flex:1;min-height:0;position:relative;"></div>
+
+                            <div style="
+                              height:220px;flex-shrink:0;
+                              border-top:0.5px solid rgba(255,255,255,0.08);
+                              display:flex;flex-direction:column;
+                              background:rgba(0,0,0,0.25);
+                            ">
+                              <div style="
+                                display:flex;align-items:center;
+                                border-bottom:0.5px solid rgba(255,255,255,0.06);
+                                flex-shrink:0;padding:0 8px;
+                              ">
+                                <button class="output-tab active" id="tab-output"
+                                  onclick="switchOutputTab('output')" style="
+                                  background:transparent;border:none;color:rgba(255,255,255,0.9);
+                                  padding:8px 14px;font-size:12px;cursor:pointer;
+                                  border-bottom:2px solid #23d18b;
+                                ">OUTPUT</button>
+
+                                <button class="output-tab" id="tab-problems"
+                                  onclick="switchOutputTab('problems')" style="
+                                  background:transparent;border:none;
+                                  color:rgba(255,255,255,0.4);
+                                  padding:8px 14px;font-size:12px;cursor:pointer;
+                                  border-bottom:2px solid transparent;
+                                ">PROBLEMS</button>
+
+                                <button class="output-tab" id="tab-stdin"
+                                  onclick="switchOutputTab('stdin')" style="
+                                  background:transparent;border:none;
+                                  color:rgba(255,255,255,0.4);
+                                  padding:8px 14px;font-size:12px;cursor:pointer;
+                                  border-bottom:2px solid transparent;
+                                ">STDIN</button>
+
+                                <button onclick="aiReviewCode()" style="
+                                  margin-left:auto;background:rgba(139,92,246,0.2);
+                                  border:0.5px solid rgba(139,92,246,0.4);
+                                  color:rgba(139,92,246,1);padding:4px 12px;
+                                  border-radius:6px;font-size:11px;cursor:pointer;
+                                  transition:background 100ms;
+                                "
+                                onmouseenter="this.style.background='rgba(139,92,246,0.3)'"
+                                onmouseleave="this.style.background='rgba(139,92,246,0.2)'">
+                                  ✨ AI Review
+                                </button>
+                              </div>
+
+                              <div id="vscode-output" style="
+                                flex:1;overflow-y:auto;padding:12px 16px;
+                                font-family:'JetBrains Mono','Fira Code',monospace;
+                                font-size:13px;color:rgba(255,255,255,0.6);
+                                scrollbar-width:thin;
+                              ">
+                                <span style="color:rgba(255,255,255,0.25)">
+                                  Ready. Press ▶ Run or ⌘↵ to execute code.
+                                </span>
+                              </div>
+
+                              <div id="vscode-problems"
+                                style="flex:1;overflow-y:auto;padding:12px 16px;display:none">
+                                <span style="color:rgba(255,255,255,0.3);font-size:12px">
+                                  No problems detected
+                                </span>
+                              </div>
+
+                              <div id="vscode-stdin"
+                                style="flex:1;padding:8px;display:none;flex-direction:column;">
+                                <div style="
+                                  font-size:11px;color:rgba(255,255,255,0.4);
+                                  margin-bottom:6px
+                                ">
+                                  Standard Input (stdin) — enter input for your program:
+                                </div>
+                                <textarea id="stdin-input" style="
+                                  flex:1;
+                                  background:rgba(255,255,255,0.05);
+                                  border:0.5px solid rgba(255,255,255,0.1);
+                                  color:rgba(255,255,255,0.8);padding:8px;
+                                  font-family:'JetBrains Mono',monospace;
+                                  font-size:13px;border-radius:6px;
+                                  resize:none;outline:none;
+                                  box-sizing:border-box;
+                                " placeholder="Enter input here (each line = one input)..."></textarea>
+                              </div>
                             </div>
-                            <div class="code-bottom-panel">
-                                <div class="code-panel-tabs">
-                                    <div class="code-panel-tab">Problems</div>
-                                    <div class="code-panel-tab active">Output</div>
-                                    <div class="code-panel-tab">Terminal</div>
-                                </div>
-                                <div class="code-panel-content" id="vscode-output">> System Ready. Press Run Code to execute script.</div>
-                            </div>
-                            <div class="code-statusbar">
-                                <div style="display:flex;gap:15px;">
-                                    <div class="code-status-item"><i data-lucide="git-branch" style="width:12px;height:12px;"></i> main</div>
-                                    <div class="code-status-item"><i data-lucide="x-circle" style="width:12px;height:12px;"></i> 0 <i data-lucide="alert-triangle" style="width:12px;height:12px;margin-left:4px;"></i> 0</div>
-                                </div>
-                                <div style="display:flex;gap:15px;">
-                                    <div class="code-status-item">Ln 12, Col 35</div>
-                                    <div class="code-status-item">Spaces: 4</div>
-                                    <div class="code-status-item">UTF-8</div>
-                                    <div class="code-status-item" style="color:#10b981; font-weight:bold;">Python</div>
-                                    <div class="code-status-item" style="color:#a855f7; font-weight:bold; cursor:pointer;" onclick="reviewWithAI()"><i data-lucide="sparkles" style="width:12px;height:12px;"></i> AI Review</div>
-                                </div>
+
+                            <div style="
+                              height:22px;background:rgba(0,100,184,0.8);
+                              display:flex;align-items:center;padding:0 12px;
+                              gap:16px;flex-shrink:0;font-size:11px;color:white;
+                            ">
+                              <span>⎇ main</span>
+                              <span id="vscode-status-lang">🐍 Python 3.10</span>
+                              <span id="vscode-cursor-pos">Ln 1, Col 1</span>
+                              <span style="margin-left:auto">UTF-8</span>
+                              <span>Spaces: 4</span>
                             </div>
                         </div>
                     </div>`;
@@ -3759,6 +4035,74 @@
                     </div>`;
                 }
 
+                if (appName === 'coderunner') {
+                    return `
+                    <div style="display:flex; flex-direction:column; height:100%; background:#1e1e1e; color:#d4d4d4; padding:0; overflow:hidden;">
+                        <div style="display:flex; padding:8px 16px; background:#252526; border-bottom:1px solid #3c3c3c; align-items:center; gap:12px;">
+                            <select id="cr-lang" style="background:#333; color:white; border:1px solid #555; padding:6px; border-radius:4px; outline:none;">
+                                <option value="javascript">Node.js (JS)</option>
+                                <option value="python">Python 3</option>
+                                <option value="cpp">C++ (GCC)</option>
+                                <option value="java">Java</option>
+                                <option value="ruby">Ruby</option>
+                            </select>
+                            <button onclick="crRunCode()" style="background:#0e639c; color:white; border:none; padding:6px 16px; border-radius:4px; font-weight:600; cursor:pointer;">Run Code</button>
+                            <div id="cr-status" style="font-size:12px; color:#888;">Ready</div>
+                        </div>
+                        <div style="display:flex; flex:1; overflow:hidden;">
+                            <div style="flex:1; border-right:1px solid #3c3c3c; display:flex; flex-direction:column;">
+                                <div style="padding:4px 12px; font-size:11px; text-transform:uppercase; color:#888; background:#1e1e1e;">Editor</div>
+                                <textarea id="cr-code" style="flex:1; background:#1e1e1e; color:#d4d4d4; border:none; padding:12px; font-family:monospace; font-size:14px; outline:none; resize:none;" spellcheck="false">console.log("Hello NebulaOS!");</textarea>
+                            </div>
+                            <div style="flex:1; display:flex; flex-direction:column;">
+                                <div style="padding:4px 12px; font-size:11px; text-transform:uppercase; color:#888; background:#1e1e1e;">Output</div>
+                                <pre id="cr-output" style="flex:1; margin:0; padding:12px; font-family:monospace; font-size:14px; background:#000; color:#4ade80; overflow-y:auto; white-space:pre-wrap;"></pre>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+
+                if (appName === 'httptest') {
+                    return `
+                    <div style="display:flex; flex-direction:column; height:100%; background:#ffffff; color:#333; overflow:hidden;">
+                        <style>
+                            .http-input { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; outline:none; font-family:monospace; }
+                            .http-btn { padding:8px 16px; background:#007aff; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:600; }
+                            .http-btn:hover { background:#005bb5; }
+                        </style>
+                        <div style="padding:16px; border-bottom:1px solid #eee; background:#f9f9f9; display:flex; gap:8px;">
+                            <select id="http-method" style="padding:8px; border:1px solid #ccc; border-radius:4px; background:white; font-weight:600;">
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PUT">PUT</option>
+                                <option value="DELETE">DELETE</option>
+                                <option value="PATCH">PATCH</option>
+                            </select>
+                            <input type="text" id="http-url" class="http-input" style="flex:1;" placeholder="https://api.example.com/data" value="https://jsonplaceholder.typicode.com/todos/1">
+                            <button class="http-btn" onclick="httpSend()">Send</button>
+                        </div>
+                        <div style="display:flex; flex:1; overflow:hidden;">
+                            <div style="flex:1; padding:16px; border-right:1px solid #eee; display:flex; flex-direction:column; gap:16px; overflow-y:auto;">
+                                <div>
+                                    <div style="font-weight:600; font-size:12px; margin-bottom:4px; color:#666;">HEADERS (JSON)</div>
+                                    <textarea id="http-headers" class="http-input" style="height:80px; resize:none;">{\n  "Content-Type": "application/json"\n}</textarea>
+                                </div>
+                                <div style="flex:1; display:flex; flex-direction:column;">
+                                    <div style="font-weight:600; font-size:12px; margin-bottom:4px; color:#666;">BODY (JSON)</div>
+                                    <textarea id="http-body" class="http-input" style="flex:1; resize:none;"></textarea>
+                                </div>
+                            </div>
+                            <div style="flex:1; display:flex; flex-direction:column; background:#f1f1f1;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 16px; border-bottom:1px solid #ddd; background:#e9e9e9;">
+                                    <div style="font-weight:600; font-size:12px; color:#555;">RESPONSE</div>
+                                    <div id="http-status" style="font-size:12px; font-weight:600; color:#666;">...</div>
+                                </div>
+                                <pre id="http-response" style="flex:1; margin:0; padding:16px; font-family:monospace; font-size:13px; overflow-y:auto; word-wrap:break-word; white-space:pre-wrap;"></pre>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+
                 if (appName === 'chat') {
                     return `
                     <div class="chat-container">
@@ -3779,24 +4123,7 @@
 
                 if (appName === 'games') {
                     return `
-                    <div class="proj-container">
-                        <h2>Arcade</h2>
-                        <p style="font-size:13px; color:#aaa; margin-top:5px; margin-bottom:20px;">Play classic mini-games right here.</p>
-                        <div class="proj-grid">
-                            <div class="proj-card" onclick="alert('Snake: Coming soon in Polish Phase!')">
-                                <div class="proj-img" style="background: #22c55e; display:flex; align-items:center; justify-content:center;"><i data-lucide="venetian-mask" size="48" color="#000"></i></div>
-                                <div class="proj-info"><h3>Snake</h3></div>
-                            </div>
-                            <div class="proj-card" onclick="alert('MiniChess: Coming soon in Polish Phase!')">
-                                <div class="proj-img" style="background: #fff; display:flex; align-items:center; justify-content:center;"><i data-lucide="boxes" size="48" color="#000"></i></div>
-                                <div class="proj-info"><h3>Mini Chess</h3></div>
-                            </div>
-                            <div class="proj-card" onclick="alert('Typing Test: Coming soon in Polish Phase!')">
-                                <div class="proj-img" style="background: #eab308; display:flex; align-items:center; justify-content:center;"><i data-lucide="keyboard" size="48" color="#000"></i></div>
-                                <div class="proj-info"><h3>Typing Test</h3></div>
-                            </div>
-                        </div>
-                    </div>`;
+                    <div id="games-center-root" style="display:flex;height:100%;background:linear-gradient(180deg,#08111f,#0f172a 42%,#111827);color:white;font-family:-apple-system,sans-serif;"></div>`;
                 }
 
                 // macOS menu bar JS
@@ -3822,6 +4149,12 @@
 
             /* ===== REAL APP CONTENT ===== */
             getRealContent(appName) {
+                const catalogApp = APP_INDEX[appName];
+                if (catalogApp?.template) {
+                    const generatedApp = window.getCatalogAppContent?.(catalogApp);
+                    if (generatedApp) return generatedApp;
+                }
+
                 if (appName === 'browser' || appName === 'safari') {
                     return {
                         title: 'Safari',
@@ -3869,36 +4202,7 @@
                 if (appName === 'mail') {
                     return {
                         title: 'Mail',
-                        html: `<div style="display:flex;height:100%;background:#1c1c1e;font-family:-apple-system,sans-serif;">
-                            <div style="width:220px;background:rgba(255,255,255,0.04);border-right:0.5px solid rgba(255,255,255,0.1);padding:12px 0;">
-                                <div style="padding:8px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);letter-spacing:.05em;">MAILBOXES</div>
-                                ${[['📥','Inbox','14'],['⭐','Starred','3'],['📤','Sent',''],['📁','Drafts','2'],['🗑️','Trash','']].map(([ic,nm,cnt])=>`
-                                    <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:default;border-radius:6px;margin:0 6px;" 
-                                        onmouseenter="this.style.background='rgba(255,255,255,0.08)'" 
-                                        onmouseleave="this.style.background='none'">
-                                        <span>${ic}</span><span style="flex:1;font-size:13px;">${nm}</span>
-                                        ${cnt?`<span style="background:#007aff;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;">${cnt}</span>`:''}
-                                    </div>`).join('')}
-                            </div>
-                            <div style="flex:1;display:flex;flex-direction:column;">
-                                <div style="padding:12px 16px;border-bottom:0.5px solid rgba(255,255,255,0.1);font-weight:600;font-size:14px;">Inbox</div>
-                                ${[
-                                    {from:'GitHub',sub:'New pull request on NebulaOS',time:'9:41 AM',preview:'mohit opened PR #12: Add dock magnification...'},
-                                    {from:'Google',sub:'Security alert: New sign-in',time:'Yesterday',preview:'A new sign-in to your account from Chrome on Windows...'},
-                                    {from:'YouTube',sub:'Your weekly digest is ready',time:'Mon',preview:'Top videos picked for you this week...'},
-                                ].map(m=>`
-                                    <div style="padding:12px 16px;border-bottom:0.5px solid rgba(255,255,255,0.06);cursor:default;"
-                                        onmouseenter="this.style.background='rgba(255,255,255,0.05)'"
-                                        onmouseleave="this.style.background='none'">
-                                        <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-                                            <span style="font-weight:600;font-size:13px;">${m.from}</span>
-                                            <span style="font-size:11px;color:rgba(255,255,255,0.4);">${m.time}</span>
-                                        </div>
-                                        <div style="font-size:13px;margin-bottom:2px;">${m.sub}</div>
-                                        <div style="font-size:12px;color:rgba(255,255,255,0.4);">${m.preview}</div>
-                                    </div>`).join('')}
-                            </div>
-                        </div>`
+                        html: `<div id="mail-container" style="display:flex;height:100%;background:#1c1c1e;font-family:-apple-system,sans-serif;color:white;"></div>`
                     };
                 }
                 if (appName === 'music' || appName === 'podcasts' || appName === 'tv') {
@@ -4209,6 +4513,8 @@
                 if (appName === 'camera') {
                     win.style.width = '640px'; win.style.height = '520px';
                     win.style.minWidth = '640px'; win.style.minHeight = '520px';
+                } else if (appName === 'coderunner' || appName === 'httptest') {
+                    win.style.width = '800px'; win.style.height = '600px';
                 } else {
                     win.style.width = '700px'; win.style.height = '480px';
                 }
@@ -4251,6 +4557,7 @@
                 winLayer.appendChild(win);
                 lucide.createIcons();
 
+                win.dataset.appName = appName;
                 this.windows.set(appName, win);
                 this.makeDraggable(win);
                 this.makeResizable(win);
@@ -4272,7 +4579,13 @@
                 if (appName === 'contacts') setTimeout(() => window.initContactsApp(), 50);
                 if (appName === 'clock') setTimeout(() => window.initClockApp(), 50);
                 if (appName === 'weather') setTimeout(() => window.initWeatherApp(), 50);
+                if (appName === 'games') setTimeout(() => window.initGamesCenter?.(), 50);
                 if (appName === 'appstore') setTimeout(() => window.initAppStore(), 50);
+                if (appName === 'featurelab') setTimeout(() => window.initFeatureLab?.(), 50);
+                if (appName === 'coderunner') setTimeout(() => window.initCodeRunner(), 50);
+                if (appName === 'httptest') setTimeout(() => window.initHttpTester(), 50);
+                if (appName === 'mail') setTimeout(() => window.initMailApp(), 50);
+                if (APP_INDEX[appName]?.template) setTimeout(() => window.initCatalogApp?.(appName), 50);
 
                 // Animate Open
                 requestAnimationFrame(() => win.classList.add('open'));
@@ -4281,26 +4594,74 @@
             closeWin(appName) {
                 const win = this.windows.get(appName);
                 if (!win) return;
-                win.classList.add('closing');
+                win.style.transition = 'transform 200ms ease-in, opacity 180ms ease-in';
+                win.style.transform = 'scale(0.88)';
+                win.style.opacity = '0';
                 setTimeout(() => {
+                    win.classList.remove('maximized', 'focused');
                     win.remove();
                     this.windows.delete(appName);
                     const dIcon = document.querySelector(`.app-${appName}`)?.parentElement;
                     if (dIcon) dIcon.classList.remove('running');
+                    if (!document.querySelector('.os-window.maximized')) {
+                        document.body.classList.remove('has-maximized');
+                    }
                 }, 200);
             },
 
             minimizeWin(appName) {
                 const win = this.windows.get(appName);
                 if (!win) return;
-                win.classList.add('minimizing');
-                win.dataset.minimized = 'true';
+                const dIcon = document.querySelector(`.app-${appName}`)?.parentElement;
+                
+                win.animate([
+                    { transform: 'scaleX(1) scaleY(1)', opacity: 1, clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)' },
+                    { transform: 'scaleY(0.5) translateY(30%)', opacity: 0.7, clipPath: 'polygon(20% 0%, 80% 0%, 65% 100%, 35% 100%)' },
+                    { transform: 'scaleX(0.1) scaleY(0.1) translateY(100%)', opacity: 0, clipPath: 'polygon(48% 0%, 52% 0%, 51% 100%, 49% 100%)' }
+                ], { duration: 400, easing: 'cubic-bezier(0.4, 0, 0.8, 1)', fill: 'forwards' }).onfinish = () => {
+                    win.style.display = 'none';
+                    win.style.animation = '';
+                    if (dIcon) dIcon.classList.add('minimized');
+                    win.dataset.minimized = 'true';
+                };
+
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.frequency.setValueAtTime(600, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.35);
+                    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                    osc.type = 'sine'; osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+                } catch(e) {}
             },
 
             restoreWin(win) {
                 if (win.dataset.minimized === 'true') {
-                    win.classList.remove('minimizing');
+                    win.style.display = '';
                     win.dataset.minimized = 'false';
+                    const appName = win.dataset.appName;
+                    const dIcon = document.querySelector(`.app-${appName}`)?.parentElement;
+                    if (dIcon) dIcon.classList.remove('minimized');
+                } else if (win.classList.contains('maximized')) {
+                    const top = win.dataset.prevT || '80px';
+                    const left = win.dataset.prevL || '100px';
+                    const width = win.dataset.prevW || '800px';
+                    const height = win.dataset.prevH || '600px';
+
+                    win.animate([
+                        { top: '28px', left: '0px', width: '100vw', height: 'calc(100vh - 28px)', borderRadius: '0px' },
+                        { top, left, width, height, borderRadius: '12px' }
+                    ], { duration: 260, easing: 'cubic-bezier(0.34, 1.20, 0.64, 1)', fill: 'forwards' }).onfinish = () => {
+                        win.style.top = top; win.style.left = left; win.style.width = width; win.style.height = height; win.style.borderRadius = '12px';
+                    };
+                    
+                    win.classList.remove('maximized');
+                    win.dataset.max = '';
+                    if (!document.querySelector('.os-window.maximized')) {
+                        document.body.classList.remove('has-maximized');
+                    }
                 }
                 this.focusWin(win);
             },
@@ -4308,74 +4669,42 @@
             maxWin(appName) {
                 const win = this.windows.get(appName);
                 if (!win) return;
+                
+                if (win.classList.contains('maximized')) {
+                    this.restoreWin(win);
+                    return;
+                }
 
                 this.focusWin(win);
 
-                if (!win.dataset.max) {
-                    /* Save current state */
-                    win.dataset.prevT = win.style.top; win.dataset.prevL = win.style.left;
-                    win.dataset.prevW = win.style.width; win.dataset.prevH = win.style.height;
+                win.dataset.prevT = win.style.top || '80px';
+                win.dataset.prevL = win.style.left || '100px';
+                win.dataset.prevW = win.style.width || '800px';
+                win.dataset.prevH = win.style.height || '600px';
 
-                    win.classList.add('maximized');
-                    document.body.classList.add('has-maximized');
-                    win.dataset.max = 'true';
+                win.animate([
+                    { top: win.style.top || '80px', left: win.style.left || '100px', width: win.style.width || '800px', height: win.style.height || '600px', borderRadius: '12px' },
+                    { top: '28px', left: '0px', width: '100vw', height: 'calc(100vh - 28px)', borderRadius: '0px' }
+                ], { duration: 280, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' }).onfinish = () => {
+                    win.style.top = '28px'; win.style.left = '0px'; win.style.width = '100vw'; win.style.height = 'calc(100vh - 28px)'; win.style.borderRadius = '0px';
+                };
 
-                    /* Animate expand */
-                    win.animate([
-                        {
-                            top: win.offsetTop + 'px', left: win.offsetLeft + 'px',
-                            width: win.offsetWidth + 'px', height: win.offsetHeight + 'px',
-                            borderRadius: '12px'
-                        },
-                        {
-                            top: '28px', left: '0px',
-                            width: '100vw', height: 'calc(100vh - 28px)',
-                            borderRadius: '0px'
-                        }
-                    ], {
-                        duration: 280, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards'
-                    }).onfinish = () => {
-                        win.style.top = '28px'; win.style.left = '0px';
-                        win.style.width = '100vw'; win.style.height = 'calc(100vh - 28px)';
-                        win.style.borderRadius = '0px';
-                    };
-                } else {
-                    /* Restore */
-                    win.animate([
-                        {
-                            top: '28px', left: '0px',
-                            width: '100vw', height: 'calc(100vh - 28px)',
-                            borderRadius: '0px'
-                        },
-                        {
-                            top: win.dataset.prevT || '100px', left: win.dataset.prevL || '100px',
-                            width: win.dataset.prevW || '800px', height: win.dataset.prevH || '600px',
-                            borderRadius: '12px'
-                        }
-                    ], {
-                        duration: 260, easing: 'cubic-bezier(0.34, 1.20, 0.64, 1)', fill: 'forwards'
-                    }).onfinish = () => {
-                        win.style.top = win.dataset.prevT || '100px';
-                        win.style.left = win.dataset.prevL || '100px';
-                        win.style.width = win.dataset.prevW || '800px';
-                        win.style.height = win.dataset.prevH || '600px';
-                        win.style.borderRadius = '12px';
-                    };
+                win.classList.add('maximized');
+                win.dataset.max = 'true';
+                win.style.zIndex = '500';
 
-                    win.classList.remove('maximized');
-                    win.dataset.max = '';
-                    if (!document.querySelector('.os-window.maximized')) {
-                        document.body.classList.remove('has-maximized');
-                        if (typeof showDock === 'function') showDock(); /* bring dock back */
-                    }
-                }
+                document.body.classList.add('has-maximized');
+                const dock = document.querySelector('.dock-container');
+                if (dock) dock.classList.remove('dock-visible');
             },
 
             focusWin(win) {
-                this.zIdx++;
+                if (!win) return;
+                this.zIdx = Math.min(this.zIdx + 1, 490);
                 win.style.zIndex = this.zIdx;
+                document.querySelectorAll('.os-window').forEach(w => w.classList.remove('focused'));
+                win.classList.add('focused');
                 
-                // Update menu bar app name
                 const menuAppName = document.getElementById('menu-app-name');
                 if (menuAppName) {
                     const titleEl = win.querySelector('.window-title');
@@ -4440,18 +4769,61 @@
 
             /* APP LOGIC BINDINGS */
             initMonaco() {
-                require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
-                require(['vs/editor/editor.main'], function () {
-                    window.editor = monaco.editor.create(document.getElementById('monaco-container'), {
-                        value: "print('NebulaOS Initialized')\n\ndef calculate_speed():\n    return 4.2 * 1000\n\nspeed = calculate_speed()\nprint(f'Running at {speed} MHz')\n",
-                        language: 'python',
-                        theme: 'vs-dark',
-                        minimap: { enabled: false },
-                        automaticLayout: true,
-                        fontSize: 14,
-                        fontFamily: "'Fira Code', monospace"
+                buildLanguageSelector();
+                switchLanguage('python'); // default
+
+                if (typeof monaco === 'undefined') {
+                    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+                    require(['vs/editor/editor.main'], function () {
+                        window.monacoEditor = monaco.editor.create(document.getElementById('monaco-container'), {
+                            value: PISTON_LANGUAGES.python.defaultCode,
+                            language: 'python',
+                            theme: 'vs-dark',
+                            fontSize: 14,
+                            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                            fontLigatures: true,
+                            minimap: { enabled: true },
+                            scrollBeyondLastLine: false,
+                            automaticLayout: true,
+                            lineNumbers: 'on',
+                            roundedSelection: false,
+                            cursorStyle: 'line',
+                            tabSize: 4,
+                            wordWrap: 'on',
+                            padding: { top: 12 }
+                        });
+
+                        window.monacoEditor.onDidChangeCursorPosition(e => {
+                            const pos = document.getElementById('vscode-cursor-pos');
+                            if (pos) pos.textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+                        });
                     });
-                });
+                } else if (!window.monacoEditor) {
+                  window.monacoEditor = monaco.editor.create(document.getElementById('monaco-container'), {
+                      value: PISTON_LANGUAGES.python.defaultCode,
+                      language: 'python',
+                      theme: 'vs-dark',
+                      fontSize: 14,
+                      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                      fontLigatures: true,
+                      minimap: { enabled: true },
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      lineNumbers: 'on',
+                      roundedSelection: false,
+                      cursorStyle: 'line',
+                      tabSize: 4,
+                      wordWrap: 'on',
+                      padding: { top: 12 }
+                  });
+                }
+
+                if (!document.getElementById('spin-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'spin-style';
+                    style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+                    document.head.appendChild(style);
+                }
             },
 
             initTerminal() {
@@ -4566,11 +4938,16 @@
         }
 
         // ======= BACKEND API CONFIG =======
+        const DEPLOY_BACKEND_URL = 'https://YOUR-RAILWAY-URL.up.railway.app';
         const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? 'http://localhost:3000'
-            : 'https://YOUR-RAILWAY-URL.up.railway.app'; // ← replace after deploying backend
+            : ((window.NEBULA_API_BASE || localStorage.getItem('nebula-api-base') || '').trim());
+        const BACKEND_ENABLED = Boolean(API_BASE && API_BASE !== DEPLOY_BACKEND_URL);
+        window.NEBULA_RUNTIME = { apiBase: API_BASE, backendEnabled: BACKEND_ENABLED };
+        window.getNebulaApiBase = function() { return API_BASE; };
 
         async function apiCall(endpoint, method, body, token) {
+            if (!BACKEND_ENABLED) return null;
             const headers = { 'Content-Type': 'application/json' };
             if (token) headers['Authorization'] = 'Bearer ' + token;
             try {
@@ -4597,6 +4974,7 @@
         window.nebulaStartTime = Date.now();
 
         function logVisitorToBackend() {
+            if (!BACKEND_ENABLED) return;
             apiCall('/api/visitors/log', 'POST', {
                 sessionId:     nebulaSession.id,
                 device:        /Mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
@@ -4612,6 +4990,7 @@
 
         // Live visitor counter via SSE
         (function connectLiveVisitors() {
+            if (!BACKEND_ENABLED) return;
             try {
                 const es = new EventSource(API_BASE + '/api/live');
                 es.onmessage = function(e) {
@@ -4628,12 +5007,8 @@
             return apiCall('/api/messages', 'POST', formData);
         };
 
-        // AI Chat Logic via OpenRouter
-        const OPENROUTER_API_KEY = "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";
-        let aiChatHistory = [
-            { role: "system", content: "You are the AI Assistant embedded in NebulaOS, a web-based operating system portfolio created by Mohit Chauhan. You assist visitors with questions about Mohit's work, experience, and general knowledge. Be concise, friendly, and helpful. Mention Mohit's awesome web OS if relevant." }
-        ];
-
+        // AI Chat Logic via Backend Proxy
+        let aiChatHistory = [];
 
         async function sendChat() {
             const input = document.getElementById('chat-input');
@@ -4648,32 +5023,27 @@
             input.value = '';
             historyContainer.scrollTop = historyContainer.scrollHeight;
 
-            aiChatHistory.push({ role: "user", content: msg });
-
             // Show typing indicator
             const typingId = 'typing-' + Date.now();
             historyContainer.innerHTML += `<div class="chat-bubble ai" id="${typingId}">Thinking...</div>`;
             historyContainer.scrollTop = historyContainer.scrollHeight;
 
             try {
-                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                        "HTTP-Referer": window.location.href, // Required by OpenRouter
-                        "X-Title": "NebulaOS Portfolio", // Optional API metadata
-                        "Content-Type": "application/json"
-                    },
+                // Send to local backend proxy
+                const response = await fetch(API_BASE + '/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        "model": "google/gemini-2.5-flash", // Use a fast good model
-                        "messages": aiChatHistory
+                        message: msg,
+                        history: aiChatHistory
                     })
                 });
 
                 if(!response.ok) throw new Error("API responded with status " + response.status);
                 
                 const data = await response.json();
-                const reply = data.choices[0].message.content;
+                const reply = data.response || "Sorry, I could not generate a response.";
+                aiChatHistory.push({ role: "user", content: msg });
                 aiChatHistory.push({ role: "assistant", content: reply });
 
                 document.getElementById(typingId).innerText = reply;
@@ -4881,6 +5251,32 @@
             dockBaseSize = parseInt(val);
             updateDockScale();
         };
+
+        window.toggleDockAutohide = function(val) {
+            const dockCont = document.querySelector('.dock-container');
+            if (val) {
+                dockCont.classList.add('autohide');
+            } else {
+                dockCont.classList.remove('autohide', 'show-dock');
+            }
+        };
+
+        // Auto-hide hover logic
+        const dockTrigger = document.getElementById('dock-trigger');
+        const dockCont = document.querySelector('.dock-container');
+        if (dockTrigger && dockCont) {
+            dockTrigger.addEventListener('mouseenter', () => {
+                if(dockCont.classList.contains('autohide')) {
+                    dockCont.classList.add('show-dock');
+                }
+            });
+            dockCont.addEventListener('mouseleave', () => {
+                if(dockCont.classList.contains('autohide')) {
+                    dockCont.classList.remove('show-dock');
+                }
+            });
+        }
+
         window.toggleDockMag = function (val) {
             isDockMagEnabled = val;
             if (!val) {
@@ -4892,57 +5288,7 @@
         };
 
         /* ======= DOCK AUTO-HIDE SYSTEM ======= */
-        const DOCK_TRIGGER_ZONE = 20;
-        const DOCK_HIDE_DELAY = 500;
-        let dockHideTimer = null;
-        let dockVisible = true;
-        let dockAutoHideEnabled = document.querySelector('input[onchange="toggleDockAutohide(this.checked)"]')?.checked || false;
-
-        function showDock() {
-            clearTimeout(dockHideTimer);
-            dock.style.transform = 'translateX(-50%) translateY(0) translateZ(0)';
-            dock.style.opacity = '1';
-            dock.style.pointerEvents = 'all';
-            dockVisible = true;
-        }
-
-        function hideDock() {
-            if(document.body.classList.contains('has-maximized')) return;
-            dock.style.transform = 'translateX(-50%) translateY(110%) translateZ(0)';
-            dock.style.opacity = '0';
-            dock.style.pointerEvents = 'none';
-            dockVisible = false;
-        }
-
-        document.addEventListener('mousemove', (e) => {
-            if (!dockAutoHideEnabled) return;
-            const fromBottom = window.innerHeight - e.clientY;
-            if (fromBottom <= DOCK_TRIGGER_ZONE) {
-                showDock();
-            } else if (dockVisible && !dock.matches(':hover')) {
-                clearTimeout(dockHideTimer);
-                dockHideTimer = setTimeout(hideDock, DOCK_HIDE_DELAY);
-            }
-        });
-
-        dock.addEventListener('mouseenter', () => {
-            clearTimeout(dockHideTimer);
-            showDock();
-        });
-
-        dock.addEventListener('mouseleave', () => {
-            if (!dockAutoHideEnabled) return;
-            dockHideTimer = setTimeout(hideDock, DOCK_HIDE_DELAY);
-        });
-
-        window.toggleDockAutohide = function (val) {
-            dockAutoHideEnabled = val;
-            if(val) {
-                dockHideTimer = setTimeout(hideDock, DOCK_HIDE_DELAY);
-            } else {
-                showDock();
-            }
-        };
+        /* ======= OLD DOCK AUTO-HIDE SYSTEM DELETED ======= */
 
         /* === STEP 31: JS DOCK CONTEXT MENU === */
         const ctxMenu = document.getElementById('mac-context-menu');
@@ -5094,42 +5440,145 @@
         updateWidgets();
 
         /* ======= MASTER APP REGISTRY ======= */
-        const APP_REGISTRY = [
-            { id:'files',      name:'Finder',          emoji:'🗂️', icon:'assets/icons/finder.png',   category:'System',       color:'#5c9fd4' },
-            { id:'settings',   name:'Settings',        emoji:'⚙️', icon:'assets/icons/settings.png', category:'System',       color:'#636366' },
-            { id:'appstore',   name:'App Store',       emoji:'🛍️', icon:'https://img.icons8.com/fluency/256/apple-app-store.png', category:'System', color:'#0a84ff' },
-            { id:'activity',   name:'Activity Monitor',emoji:'📊', icon:'https://img.icons8.com/fluency/256/combo-chart.png',     category:'System', color:'#ff9f0a' },
-            { id:'terminal',   name:'Terminal',        emoji:'⌨️', icon:'assets/icons/terminal.png', category:'System',       color:'#1c1c1e' },
-            { id:'downloads',  name:'Downloads',       emoji:'📥', icon:'https://img.icons8.com/fluency/256/downloads-folder.png',category:'System', color:'#636366' },
-            { id:'trash',      name:'Trash',           emoji:'🗑️', icon:'https://img.icons8.com/fluency/256/trash.png',           category:'System', color:'#636366' },
-            { id:'browser',    name:'Safari',          emoji:'🌐', icon:'assets/icons/safari.png',   category:'Internet',     color:'#0a84ff' },
-            { id:'maps',       name:'Maps',            emoji:'🗺️', icon:'assets/icons/maps.png',     category:'Internet',     color:'#30d158' },
-            { id:'mail',       name:'Mail',            emoji:'📧', icon:'assets/icons/mail.png',     category:'Communication',color:'#0a84ff' },
-            { id:'messages',   name:'Messages',        emoji:'💬', icon:'assets/icons/messages.png', category:'Communication',color:'#30d158' },
-            { id:'facetime',   name:'FaceTime',        emoji:'📹', icon:'https://img.icons8.com/fluency/256/facetime.png',        category:'Communication',color:'#30d158' },
-            { id:'notes',      name:'Notes',           emoji:'📝', icon:'assets/icons/notes.png',    category:'Productivity', color:'#ffd60a' },
-            { id:'calendar',   name:'Calendar',        emoji:'📅', icon:'https://img.icons8.com/fluency/256/calendar.png',        category:'Productivity',color:'#ff3b30' },
-            { id:'reminders',  name:'Reminders',       emoji:'🔔', icon:'https://img.icons8.com/fluency/256/reminders.png',       category:'Productivity',color:'#ff3b30' },
-            { id:'contacts',   name:'Contacts',        emoji:'👥', icon:'https://img.icons8.com/fluency/256/contacts.png',        category:'Productivity',color:'#636366' },
-            { id:'calculator', name:'Calculator',      emoji:'🔢', icon:'assets/icons/calculator.png',category:'Productivity',color:'#1c1c1e' },
-            { id:'vscode',     name:'VS Code',         emoji:'💻', icon:'assets/icons/vscode.png',   category:'Developer',    color:'#0066b8' },
-            { id:'photos',     name:'Photos',          emoji:'🖼️', icon:'https://img.icons8.com/fluency/256/apple-photos.png',    category:'Creative',  color:'#ff9f0a' },
-            { id:'camera',     name:'Camera',          emoji:'📷', icon:'https://img.icons8.com/fluency/256/camera.png',          category:'Creative',  color:'#1c1c1e' },
-            { id:'music',      name:'Music',           emoji:'🎵', icon:'assets/icons/music.png',    category:'Creative',     color:'#ff2d55' },
-            { id:'tv',         name:'Apple TV',        emoji:'📺', icon:'https://img.icons8.com/fluency/256/apple-tv.png',        category:'Creative',  color:'#1c1c1e' },
-            { id:'podcasts',   name:'Podcasts',        emoji:'🎙️', icon:'https://img.icons8.com/fluency/256/apple-podcasts.png',  category:'Creative',  color:'#bf5af2' },
-            { id:'recorder',   name:'Screen Recorder', emoji:'⏺️', icon:'https://img.icons8.com/fluency/256/video-call.png',      category:'Creative',  color:'#ff3b30' },
-            { id:'voice',      name:'Voice Memos',     emoji:'🎤', icon:'https://img.icons8.com/fluency/256/audio-wave.png',      category:'Creative',  color:'#ff3b30' },
-            { id:'weather',    name:'Weather',         emoji:'⛅', icon:'https://img.icons8.com/fluency/256/weather.png',         category:'Lifestyle', color:'#0a84ff' },
-            { id:'clock',      name:'Clock',           emoji:'🕐', icon:'https://img.icons8.com/fluency/256/clock.png',           category:'Lifestyle', color:'#1c1c1e' },
-            { id:'about',      name:'About Me',        emoji:'👤', icon:'https://img.icons8.com/fluency/256/user-male-circle.png',category:'Portfolio', color:'#5e5ce6' },
-            { id:'projects',   name:'Projects',        emoji:'📁', icon:'https://img.icons8.com/fluency/256/folder-invoices.png', category:'Portfolio', color:'#ff9f0a' },
-            { id:'chat',       name:'AI Chat',         emoji:'🤖', icon:'https://img.icons8.com/fluency/256/chatgpt.png',         category:'Portfolio', color:'#30d158' },
-            { id:'games',      name:'Games',           emoji:'🎮', icon:'https://img.icons8.com/fluency/256/controller.png',      category:'Portfolio', color:'#bf5af2' },
+        function makeCatalogApps(category, defs) {
+            return defs.map(([id, name, emoji, icon, color, template, blurb]) => ({
+                id, name, emoji, icon, color, category, template, blurb
+            }));
+        }
+
+        const CORE_APP_REGISTRY = [
+            { id:'files',      name:'Finder',          emoji:'🗂️', icon:'assets/icons/finder.png',   category:'System',       color:'#5c9fd4', blurb:'Browse files, folders, and workspace shortcuts.' },
+            { id:'settings',   name:'Settings',        emoji:'⚙️', icon:'assets/icons/settings.png', category:'System',       color:'#636366', blurb:'Personalize accent colors, dock behavior, and desktop feel.' },
+            { id:'appstore',   name:'App Store',       emoji:'🛍️', icon:'https://img.icons8.com/fluency/256/apple-app-store.png', category:'System', color:'#0a84ff', blurb:'Discover the complete Nebula macOS-style app catalog.' },
+            { id:'activity',   name:'Activity Monitor',emoji:'📊', icon:'https://img.icons8.com/fluency/256/combo-chart.png',     category:'System', color:'#ff9f0a', blurb:'Monitor live processes, CPU, memory, and system health.' },
+            { id:'terminal',   name:'Terminal',        emoji:'⌨️', icon:'assets/icons/terminal.png', category:'System',       color:'#1c1c1e', blurb:'Run built-in commands in a polished terminal window.' },
+            { id:'downloads',  name:'Downloads',       emoji:'📥', icon:'https://img.icons8.com/fluency/256/downloads-folder.png',category:'System', color:'#636366', blurb:'Review recent exports, recordings, and generated files.' },
+            { id:'trash',      name:'Trash',           emoji:'🗑️', icon:'https://img.icons8.com/fluency/256/trash.png',           category:'System', color:'#636366', blurb:'A realistic trash bin for deleted mock files.' },
+            { id:'browser',    name:'Safari',          emoji:'🌐', icon:'assets/icons/safari.png',   category:'Internet',     color:'#0a84ff', blurb:'Browse the web inside the desktop shell.' },
+            { id:'maps',       name:'Maps',            emoji:'🗺️', icon:'assets/icons/maps.png',     category:'Internet',     color:'#30d158', blurb:'Search and open embedded map locations.' },
+            { id:'mail',       name:'Mail',            emoji:'📧', icon:'assets/icons/mail.png',     category:'Communication',color:'#0a84ff', blurb:'Read and compose realistic mailbox conversations.' },
+            { id:'messages',   name:'Messages',        emoji:'💬', icon:'assets/icons/messages.png', category:'Communication',color:'#30d158', blurb:'A local iMessage-style conversation experience.' },
+            { id:'facetime',   name:'FaceTime',        emoji:'📹', icon:'https://img.icons8.com/fluency/256/facetime.png',        category:'Communication',color:'#30d158', blurb:'Start a simulated FaceTime session with live camera.' },
+            { id:'notes',      name:'Notes',           emoji:'📝', icon:'assets/icons/notes.png',    category:'Productivity', color:'#ffd60a', blurb:'Write and save rich notes in local storage.' },
+            { id:'calendar',   name:'Calendar',        emoji:'📅', icon:'https://img.icons8.com/fluency/256/calendar.png',        category:'Productivity',color:'#ff3b30', blurb:'Browse events and monthly scheduling views.' },
+            { id:'reminders',  name:'Reminders',       emoji:'🔔', icon:'https://img.icons8.com/fluency/256/reminders.png',       category:'Productivity',color:'#ff3b30', blurb:'Track tasks with smart lists and completion states.' },
+            { id:'contacts',   name:'Contacts',        emoji:'👥', icon:'https://img.icons8.com/fluency/256/contacts.png',        category:'Productivity',color:'#636366', blurb:'Keep a searchable, editable address book.' },
+            { id:'calculator', name:'Calculator',      emoji:'🔢', icon:'assets/icons/calculator.png',category:'Productivity',color:'#1c1c1e', blurb:'A more capable calculator with scientific controls.' },
+            { id:'vscode',     name:'VS Code',         emoji:'💻', icon:'assets/icons/vscode.png',   category:'Developer',    color:'#0066b8', blurb:'Edit code, run snippets, and review output.' },
+            { id:'coderunner', name:'Code Runner',     emoji:'⚡', icon:'https://img.icons8.com/fluency/256/code.png',     category:'Developer',    color:'#1f2937', blurb:'Execute code in multiple languages via Piston.' },
+            { id:'httptest',   name:'HTTP Tester',     emoji:'🌐', icon:'https://img.icons8.com/fluency/256/api.png',        category:'Developer',    color:'#eab308', blurb:'Send custom requests and inspect responses.' },
+            { id:'photos',     name:'Photos',          emoji:'🖼️', icon:'https://img.icons8.com/fluency/256/apple-photos.png',    category:'Creative',  color:'#ff9f0a', blurb:'View wallpaper and gallery collections in a photo browser.' },
+            { id:'camera',     name:'Camera',          emoji:'📷', icon:'https://img.icons8.com/fluency/256/camera.png',          category:'Creative',  color:'#1c1c1e', blurb:'Capture webcam photos and recordings with overlays.' },
+            { id:'music',      name:'Music',           emoji:'🎵', icon:'assets/icons/music.png',    category:'Creative',     color:'#ff2d55', blurb:'Play a stylized music experience with transport controls.' },
+            { id:'tv',         name:'Apple TV',        emoji:'📺', icon:'https://img.icons8.com/fluency/256/apple-tv.png',        category:'Creative',  color:'#1c1c1e', blurb:'Browse cinematic media cards and featured content.' },
+            { id:'podcasts',   name:'Podcasts',        emoji:'🎙️', icon:'https://img.icons8.com/fluency/256/apple-podcasts.png',  category:'Creative',  color:'#bf5af2', blurb:'Open a podcast-style media center with realistic controls.' },
+            { id:'recorder',   name:'Screen Recorder', emoji:'⏺️', icon:'https://img.icons8.com/fluency/256/video-call.png',      category:'Creative',  color:'#ff3b30', blurb:'Record your screen directly from the browser.' },
+            { id:'voice',      name:'Voice Memos',     emoji:'🎤', icon:'https://img.icons8.com/fluency/256/audio-wave.png',      category:'Creative',  color:'#ff3b30', blurb:'Capture simple audio memo simulations with a live waveform.' },
+            { id:'weather',    name:'Weather',         emoji:'⛅', icon:'https://img.icons8.com/fluency/256/weather.png',         category:'Lifestyle', color:'#0a84ff', blurb:'Fetch current weather and an hourly forecast.' },
+            { id:'clock',      name:'Clock',           emoji:'🕐', icon:'https://img.icons8.com/fluency/256/clock.png',           category:'Lifestyle', color:'#1c1c1e', blurb:'World clock, stopwatch, and timer utilities.' },
+            { id:'about',      name:'About Me',        emoji:'👤', icon:'https://img.icons8.com/fluency/256/user-male-circle.png',category:'Portfolio', color:'#5e5ce6', blurb:'Portfolio story, skills, and primary CTAs.' },
+            { id:'projects',   name:'Projects',        emoji:'📁', icon:'https://img.icons8.com/fluency/256/folder-invoices.png', category:'Portfolio', color:'#ff9f0a', blurb:'Project gallery for showcasing work in a desktop metaphor.' },
+            { id:'chat',       name:'AI Chat',         emoji:'🤖', icon:'https://img.icons8.com/fluency/256/chatgpt.png',         category:'Portfolio', color:'#30d158', blurb:'Talk to an AI persona through the backend proxy.' },
+            { id:'games',      name:'Games',           emoji:'🎮', icon:'https://img.icons8.com/fluency/256/controller.png',      category:'Portfolio', color:'#bf5af2', blurb:'A playful launcher for mini games and interactive toys.' },
         ];
+
+        const EXPANDED_APP_REGISTRY = [
+            ...makeCatalogApps('Productivity', [
+                ['textedit', 'TextEdit', '📄', 'https://img.icons8.com/fluency/256/document.png', '#f59e0b', 'editor', 'A clean plain-text workspace with autosave.'],
+                ['pages', 'Pages', '📘', 'https://img.icons8.com/fluency/256/book-shelf.png', '#3b82f6', 'editor', 'Draft polished copy, articles, or landing-page content.'],
+                ['numbers', 'Numbers', '📊', 'https://img.icons8.com/fluency/256/ms-excel.png', '#10b981', 'sheet', 'Manage structured data in an editable spreadsheet view.'],
+                ['keynote', 'Keynote', '🎞️', 'https://img.icons8.com/fluency/256/presentation.png', '#0ea5e9', 'board', 'Storyboard pitch slides, launches, and presentation beats.'],
+                ['stickies', 'Stickies', '🟨', 'https://img.icons8.com/fluency/256/note.png', '#facc15', 'list', 'Capture quick sticky-note reminders and mini tasks.'],
+                ['freeform', 'Freeform', '🧠', 'https://img.icons8.com/fluency/256/whiteboard.png', '#8b5cf6', 'board', 'Organize ideas visually on a flexible planning board.'],
+                ['journal', 'Journal', '📔', 'https://img.icons8.com/fluency/256/journal.png', '#ec4899', 'editor', 'Keep a private long-form daily journal in local storage.'],
+                ['planner', 'Planner', '🗓️', 'https://img.icons8.com/fluency/256/planner.png', '#2563eb', 'list', 'Track deadlines, milestones, and personal planning items.'],
+                ['budget', 'Budget', '💳', 'https://img.icons8.com/fluency/256/wallet.png', '#059669', 'sheet', 'Watch budgets, subscriptions, and spending categories.'],
+                ['shortcuts', 'Shortcuts', '⚡', 'https://img.icons8.com/fluency/256/automation.png', '#7c3aed', 'dashboard', 'See automation cards and reusable desktop workflows.'],
+                ['clipboard', 'Clipboard', '📋', 'https://img.icons8.com/fluency/256/copy.png', '#64748b', 'editor', 'Maintain a persistent scratch clipboard and snippets list.'],
+                ['kanban', 'Kanban', '🧩', 'https://img.icons8.com/fluency/256/trello.png', '#0f766e', 'board', 'Plan work across Todo, Doing, and Done columns.'],
+                ['noteshelf', 'NoteShelf', '📚', 'https://img.icons8.com/fluency/256/notebook.png', '#d97706', 'editor', 'A richer writing surface for personal note collections.'],
+                ['draftpad', 'DraftPad', '✍️', 'https://img.icons8.com/fluency/256/edit-file.png', '#fb7185', 'editor', 'Draft slogans, bios, scripts, and short-form copy.'],
+                ['meetingdeck', 'Meeting Deck', '🪄', 'https://img.icons8.com/fluency/256/conference-call.png', '#0284c7', 'dashboard', 'Prepare agendas, talking points, and meeting snapshots.']
+            ]),
+            ...makeCatalogApps('Developer', [
+                ['xcode', 'Xcode', '🛠️', 'https://img.icons8.com/color/256/xcode.png', '#1575f9', 'dashboard', 'Explore a native-style dev workspace with build panels.'],
+                ['scripteditor', 'Script Editor', '📜', 'https://img.icons8.com/fluency/256/source-code.png', '#0f172a', 'editor', 'Write scripts, prompts, and automation snippets.'],
+                ['consoleapp', 'Console', '📟', 'https://img.icons8.com/fluency/256/console.png', '#111827', 'dashboard', 'Inspect mock logs, events, and process chatter.'],
+                ['gitclient', 'Git Client', '🌿', 'https://img.icons8.com/color/256/git.png', '#f97316', 'dashboard', 'View branches, commits, and repo-style activity.'],
+                ['dbstudio', 'DB Studio', '🗄️', 'https://img.icons8.com/fluency/256/database.png', '#2563eb', 'sheet', 'Inspect collections and editable mock records.'],
+                ['jsonlab', 'JSON Lab', '🧪', 'https://img.icons8.com/fluency/256/json.png', '#0ea5e9', 'json', 'Format, validate, and pretty-print JSON safely.'],
+                ['regexlab', 'Regex Lab', '🔍', 'https://img.icons8.com/fluency/256/search-in-list.png', '#7c3aed', 'regex', 'Test regex patterns against live sample text.'],
+                ['snippetbox', 'Snippet Box', '📦', 'https://img.icons8.com/fluency/256/code-file.png', '#1d4ed8', 'editor', 'Maintain reusable snippets, prompts, and shell commands.'],
+                ['networkutility', 'Network Utility', '🛰️', 'https://img.icons8.com/fluency/256/internet.png', '#0f766e', 'dashboard', 'Check network cards, latency, and endpoint health cards.'],
+                ['devdocs', 'Dev Docs', '📘', 'https://img.icons8.com/fluency/256/documentation.png', '#1e40af', 'dashboard', 'Quick-reference docs, links, and developer checklists.'],
+                ['apistudio', 'API Studio', '🧭', 'https://img.icons8.com/fluency/256/api-settings.png', '#eab308', 'dashboard', 'A polished API workspace to complement HTTP Tester.'],
+                ['terminalpro', 'Terminal Pro', '🖥️', 'https://img.icons8.com/fluency/256/terminal.png', '#111827', 'dashboard', 'A command palette dashboard for power-user workflows.']
+            ]),
+            ...makeCatalogApps('Utilities', [
+                ['previewapp', 'Preview', '🖼️', 'https://img.icons8.com/fluency/256/picture.png', '#64748b', 'gallery', 'Open wallpapers, screenshots, and design references.'],
+                ['quicklook', 'Quick Look', '👁️', 'https://img.icons8.com/fluency/256/view-file.png', '#64748b', 'gallery', 'Instantly preview screenshots and files in a light viewer.'],
+                ['passwords', 'Passwords', '🔐', 'https://img.icons8.com/fluency/256/password.png', '#0ea5e9', 'vault', 'Store demo credentials and generate strong passwords.'],
+                ['diskutility', 'Disk Utility', '💽', 'https://img.icons8.com/fluency/256/hdd.png', '#64748b', 'dashboard', 'Inspect storage cards and partition-style status panes.'],
+                ['systeminfo', 'System Information', '🧬', 'https://img.icons8.com/fluency/256/system-information.png', '#334155', 'dashboard', 'Read browser, platform, memory, and device facts.'],
+                ['batterylab', 'Battery Lab', '🔋', 'https://img.icons8.com/fluency/256/charging-battery.png', '#22c55e', 'dashboard', 'See usage estimates, charge stages, and battery tips.'],
+                ['displaystudio', 'Display Studio', '🖥️', 'https://img.icons8.com/fluency/256/monitor.png', '#3b82f6', 'dashboard', 'Tune display presets, density, and wallpaper previews.'],
+                ['archiveutility', 'Archive Utility', '🧷', 'https://img.icons8.com/fluency/256/archive-folder.png', '#f59e0b', 'list', 'Manage compressed bundles and export collections.'],
+                ['colorstudio', 'Color Studio', '🎨', 'https://img.icons8.com/fluency/256/color-palette.png', '#ec4899', 'palette', 'Pick, copy, and compare polished desktop colors.'],
+                ['unitconverter', 'Unit Converter', '📐', 'https://img.icons8.com/fluency/256/ruler.png', '#06b6d4', 'converter', 'Convert length, weight, and temperature values.'],
+                ['translator', 'Translator', '🌍', 'https://img.icons8.com/fluency/256/language.png', '#14b8a6', 'dashboard', 'A phrasebook-style translator workspace with quick phrases.'],
+                ['dictionary', 'Dictionary', '📖', 'https://img.icons8.com/fluency/256/dictionary.png', '#3b82f6', 'dictionary', 'Search a built-in glossary of design and coding terms.'],
+                ['screenshotstudio', 'Screenshot Studio', '📸', 'https://img.icons8.com/fluency/256/screenshot.png', '#f97316', 'gallery', 'Review captured desktop images and wallpaper inspiration.'],
+                ['timerplus', 'Timer+', '⏱️', 'https://img.icons8.com/fluency/256/stopwatch.png', '#ef4444', 'list', 'Preset pomodoro, focus, and sprint routines in one place.'],
+                ['filevault', 'File Vault', '🗃️', 'https://img.icons8.com/fluency/256/safe.png', '#0f172a', 'vault', 'A secure-feeling document vault for mock private files.']
+            ]),
+            ...makeCatalogApps('Lifestyle', [
+                ['books', 'Books', '📚', 'https://img.icons8.com/fluency/256/books.png', '#f97316', 'gallery', 'Browse reading picks, quotes, and saved references.'],
+                ['news', 'News', '🗞️', 'https://img.icons8.com/fluency/256/news.png', '#dc2626', 'dashboard', 'Read curated article cards across design and tech.'],
+                ['stocks', 'Stocks', '📈', 'https://img.icons8.com/fluency/256/stocks-growth.png', '#22c55e', 'dashboard', 'Track a watchlist with animated market-style movement.'],
+                ['homeapp', 'Home', '🏠', 'https://img.icons8.com/fluency/256/home-automation.png', '#2563eb', 'dashboard', 'Control rooms, scenes, and ambient desktop presets.'],
+                ['health', 'Health', '❤️', 'https://img.icons8.com/fluency/256/heart-with-pulse.png', '#ef4444', 'dashboard', 'Summaries for sleep, steps, focus, and hydration.'],
+                ['fitness', 'Fitness', '🏃', 'https://img.icons8.com/fluency/256/running.png', '#22c55e', 'dashboard', 'Weekly rings, movement goals, and activity insights.'],
+                ['recipes', 'Recipes', '🍳', 'https://img.icons8.com/fluency/256/cooking-book.png', '#f59e0b', 'list', 'Save meals, grocery lists, and prep workflows.'],
+                ['travel', 'Travel', '✈️', 'https://img.icons8.com/fluency/256/airplane-mode-on.png', '#0284c7', 'dashboard', 'Collect trips, checklists, and itinerary snippets.'],
+                ['finance', 'Finance', '💹', 'https://img.icons8.com/fluency/256/combo-chart.png', '#059669', 'sheet', 'A compact finance sheet for goals and account tracking.'],
+                ['radio', 'Radio', '📻', 'https://img.icons8.com/fluency/256/radio.png', '#7c3aed', 'dashboard', 'Feature stations, moods, and listening sessions.'],
+                ['moodboard', 'Moodboard', '✨', 'https://img.icons8.com/fluency/256/idea.png', '#d946ef', 'gallery', 'Collect inspiration boards and visual references.'],
+                ['wallpapers', 'Wallpapers', '🪟', 'https://img.icons8.com/fluency/256/landscape.png', '#0ea5e9', 'gallery', 'Browse a fuller wallpaper gallery for the desktop.'],
+                ['widgets', 'Widgets', '🧩', 'https://img.icons8.com/fluency/256/dashboard-layout.png', '#4f46e5', 'dashboard', 'A control panel of glanceable widgets and quick stats.'],
+                ['focusmode', 'Focus Mode', '🌙', 'https://img.icons8.com/fluency/256/do-not-disturb-ios.png', '#1f2937', 'list', 'Configure focus routines, quiet hours, and work sessions.'],
+                ['weatherlab', 'Weather Lab', '🌦️', 'https://img.icons8.com/fluency/256/cloud.png', '#0ea5e9', 'dashboard', 'A secondary weather lab with alternate panel layouts.']
+            ]),
+            ...makeCatalogApps('Creative', [
+                ['photoboothplus', 'Photo Booth+', '🎭', 'https://img.icons8.com/fluency/256/photo-booth.png', '#ec4899', 'gallery', 'A playful booth of shots, frames, and portraits.'],
+                ['musicstudio', 'Music Studio', '🎚️', 'https://img.icons8.com/fluency/256/equalizer.png', '#f43f5e', 'dashboard', 'Control tracks, scenes, and sound presets.'],
+                ['pixelpad', 'Pixel Pad', '🧱', 'https://img.icons8.com/fluency/256/pixel-star.png', '#f97316', 'palette', 'A compact color and pixel-planning playground.'],
+                ['storyboard', 'Storyboard', '🎬', 'https://img.icons8.com/fluency/256/storyboard.png', '#3b82f6', 'board', 'Arrange shots, story beats, and scene ideas.'],
+                ['palettebook', 'Palette Book', '🌈', 'https://img.icons8.com/fluency/256/rainbow.png', '#e11d48', 'palette', 'Save favorite palettes and compare accent themes.'],
+                ['audiolab', 'Audio Lab', '🔊', 'https://img.icons8.com/fluency/256/sound-surround.png', '#8b5cf6', 'dashboard', 'Inspect waveforms, levels, and track sections.'],
+                ['videohub', 'Video Hub', '🎥', 'https://img.icons8.com/fluency/256/video.png', '#111827', 'dashboard', 'A cinematic dashboard for watchlists and trailers.'],
+                ['fontbook', 'Font Book', '🔤', 'https://img.icons8.com/fluency/256/fonts.png', '#64748b', 'gallery', 'Compare typefaces, glyphs, and UI pairings.']
+            ]),
+            ...makeCatalogApps('Games', [
+                ['tictactoe', 'Tic-Tac-Toe', '⭕', 'https://img.icons8.com/fluency/256/tic-tac-toe.png', '#2563eb', 'tictactoe', 'Play a polished local game inside a desktop app window.'],
+                ['memorygame', 'Memory Match', '🃏', 'https://img.icons8.com/fluency/256/cards.png', '#ef4444', 'memory', 'Flip and match cards in a browser-friendly mini game.'],
+                ['typingdojo', 'Typing Dojo', '⌨️', 'https://img.icons8.com/fluency/256/keyboard.png', '#0f766e', 'dashboard', 'Practice phrases, speed, and focus drills.'],
+                ['sudokulab', 'Sudoku Lab', '🔢', 'https://img.icons8.com/fluency/256/sudoku.png', '#f59e0b', 'dashboard', 'A puzzle dashboard with grids and challenge cards.'],
+                ['chesslab', 'Chess Lab', '♟️', 'https://img.icons8.com/fluency/256/chessboard.png', '#111827', 'dashboard', 'Open strategies, openings, and board-study notes.'],
+                ['quizarena', 'Quiz Arena', '❓', 'https://img.icons8.com/fluency/256/question-mark.png', '#8b5cf6', 'dashboard', 'Knowledge quiz cards with playful scoring panels.'],
+                ['flashcards', 'Flashcards', '🗂️', 'https://img.icons8.com/fluency/256/flashcards.png', '#0ea5e9', 'list', 'Keep decks, prompts, and quick revision queues.'],
+                ['arcadeplus', 'Arcade+', '🕹️', 'https://img.icons8.com/fluency/256/arcade.png', '#ec4899', 'dashboard', 'A mini arcade control room for browser games.']
+            ])
+        ];
+
+        const APP_REGISTRY = [...CORE_APP_REGISTRY, ...EXPANDED_APP_REGISTRY];
+        const APP_INDEX = Object.fromEntries(APP_REGISTRY.map(app => [app.id, app]));
 
         /* Backward-compat shim — LP_APPS still used in the App Store logic below */
         const LP_APPS = APP_REGISTRY.map(a => ({ name: a.name, icon: a.icon, app: a.id }));
+        window.os = os;
+        window.APP_REGISTRY = APP_REGISTRY;
+        window.APP_INDEX = APP_INDEX;
+        window.LP_APPS = LP_APPS;
 
         /* ======= SINGLE openApp() DISPATCHER ======= */
         window.openApp = function(appId) {
@@ -5155,34 +5604,47 @@
 
             const overlay = document.createElement('div');
             overlay.id = 'launcher-overlay';
-            overlay.style.cssText = [
-                'position:fixed;inset:0;z-index:70000;',
-                'display:flex;flex-direction:column;align-items:center;padding-top:50px;',
-                'background:rgba(0,0,0,0.58);',
-                'backdrop-filter:blur(40px) saturate(1.8);',
-                '-webkit-backdrop-filter:blur(40px) saturate(1.8);',
-                'animation:launcherIn 280ms cubic-bezier(0.34,1.20,0.64,1) forwards;'
-            ].join('');
+            overlay.style.position = 'fixed';
+            overlay.style.inset = '0';
+            overlay.style.zIndex = '70000';
+            overlay.style.display = 'flex';
+            overlay.style.flexDirection = 'column';
+            overlay.style.alignItems = 'center';
+            overlay.style.paddingTop = '50px';
+            overlay.style.background = 'rgba(0,0,0,0.58)';
+            overlay.style.backdropFilter = 'blur(40px) saturate(1.8)';
+            overlay.style.WebkitBackdropFilter = 'blur(40px) saturate(1.8)';
+            overlay.style.animation = 'launcherIn 280ms cubic-bezier(0.34,1.20,0.64,1) forwards';
 
-            overlay.innerHTML =
-                '<style>' +
-                '@keyframes launcherIn{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}' +
-                '@keyframes launcherOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.04)}}' +
-                '@keyframes iconPop{from{opacity:0;transform:scale(0.4) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}' +
-                '#launcher-search::placeholder{color:rgba(255,255,255,0.5)}' +
-                '.l-icon:hover{background:rgba(255,255,255,0.14)!important;transform:scale(1.06)!important}' +
-                '</style>' +
-                '<div style="width:300px;margin-bottom:36px;position:relative;">' +
-                  '<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.5);font-size:15px;">🔍</span>' +
-                  '<input type="text" id="launcher-search" placeholder="Search apps…" autocomplete="off"' +
-                  ' style="width:100%;box-sizing:border-box;padding:11px 14px 11px 38px;' +
-                  'background:rgba(255,255,255,0.15);border:0.5px solid rgba(255,255,255,0.25);' +
-                  'border-radius:14px;color:white;font-size:15px;font-family:-apple-system,sans-serif;outline:none;">' +
-                '</div>' +
-                '<div style="width:860px;max-width:96vw;">' +
-                  '<div id="launcher-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px 8px;padding:0 10px;min-height:380px;"></div>' +
-                '</div>' +
-                '<div id="launcher-dots" style="display:flex;gap:8px;margin-top:24px;"></div>';
+            overlay.innerHTML = `
+                <style>
+                @keyframes launcherIn{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:scale(1)}}
+                @keyframes launcherOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.04)}}
+                @keyframes iconPop{from{opacity:0;transform:scale(0.4) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+                #launcher-search::placeholder{color:rgba(255,255,255,0.5)}
+                .l-icon:hover{background:rgba(255,255,255,0.14)!important;transform:scale(1.06)!important}
+                </style>
+                
+                <div style="width:300px;margin-bottom:36px;position:relative;">
+                  <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.5);font-size:15px;">🔍</span>
+                  <input type="text" id="launcher-search" placeholder="Search apps…" autocomplete="off"
+                  style="width:100%;box-sizing:border-box;padding:11px 14px 11px 38px;
+                  background:rgba(255,255,255,0.15);border:0.5px solid rgba(255,255,255,0.25);
+                  border-radius:14px;color:white;font-size:15px;font-family:-apple-system,sans-serif;outline:none;">
+                </div>
+                
+                <div style="width:min(94vw, 860px);">
+                  <div id="launcher-grid" style="
+                    display:grid;
+                    grid-template-columns:repeat(7, 1fr);
+                    gap:20px 12px;
+                    padding:0 10px;
+                    min-height:380px;
+                  "></div>
+                </div>
+                
+                <div id="launcher-dots" style="display:flex;gap:8px;margin-top:24px;"></div>
+            `;
 
             document.body.appendChild(overlay);
 
@@ -5210,30 +5672,54 @@
 
             grid.innerHTML = pageApps.map(function(app, i) {
                 const useImg = app.icon && (app.icon.startsWith('assets') || app.icon.startsWith('http'));
-                const iconContent = useImg
-                    ? '<img src="' + app.icon + '" style="width:66px;height:66px;border-radius:15px;object-fit:cover;" onerror="this.src=\'https://img.icons8.com/fluency/256/mac-os.png\'">'
-                    : '<span style="font-size:36px;">' + app.emoji + '</span>';
-                return '<div class="l-icon" onclick="openApp(\'' + app.id + '\')"' +
-                    ' style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;' +
-                    'border-radius:18px;cursor:pointer;transition:background 120ms,transform 140ms;' +
-                    'animation:iconPop ' + (100 + i * 22) + 'ms cubic-bezier(0.34,1.56,0.64,1) both;">' +
-                    '<div style="width:72px;height:72px;border-radius:17px;' +
-                    'background:' + app.color + ';' +
-                    'display:flex;align-items:center;justify-content:center;' +
-                    'box-shadow:0 6px 20px rgba(0,0,0,0.35);overflow:hidden;">' +
-                    iconContent + '</div>' +
-                    '<span style="font-size:11.5px;color:rgba(255,255,255,0.9);text-align:center;' +
-                    'max-width:80px;word-break:break-word;line-height:1.3;' +
-                    'font-family:-apple-system,sans-serif;text-shadow:0 1px 4px rgba(0,0,0,0.7);">' +
-                    app.name + '</span></div>';
+                const iconHtml = useImg
+                    ? `<img src="${app.icon}" style="width:66px;height:66px;border-radius:15px;object-fit:cover;" onerror="this.src='https://img.icons8.com/fluency/256/mac-os.png'">`
+                    : `<span style="font-size:36px;">${app.emoji}</span>`;
+
+                return `<div class="l-icon" data-appid="${app.id}" style="
+                        display:flex;flex-direction:column;align-items:center;
+                        justify-content:flex-start;gap:8px;padding:14px 8px;
+                        border-radius:18px;cursor:pointer;
+                        transition:background 120ms,transform 140ms;
+                        animation:iconPop ${100 + i * 22}ms cubic-bezier(0.34,1.56,0.64,1) both;">
+                    <div style="width:66px;height:66px;min-width:66px;flex-shrink:0;border-radius:17px;
+                        background:${app.color};display:flex;align-items:center;justify-content:center;
+                        box-shadow:0 6px 20px rgba(0,0,0,0.35);overflow:hidden;">
+                        ${iconHtml}
+                    </div>
+                    <span style="font-size:11px;color:rgba(255,255,255,0.9);text-align:center;
+                        width:80px;max-width:80px;white-space:nowrap;overflow:hidden;
+                        text-overflow:ellipsis;display:block;
+                        font-family:-apple-system,sans-serif;text-shadow:0 1px 4px rgba(0,0,0,0.7);">
+                        ${app.name}
+                    </span>
+                </div>`;
             }).join('');
+
+            /* Attach click listeners directly — avoids inline onclick issues */
+            grid.querySelectorAll('.l-icon').forEach(function(el) {
+                el.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const id = el.dataset.appid;
+                    closeLauncher();
+                    setTimeout(function() { os.launchApp(id); }, 250);
+                });
+                el.addEventListener('mouseenter', function() {
+                    el.style.background = 'rgba(255,255,255,0.14)';
+                    el.style.transform  = 'scale(1.06)';
+                });
+                el.addEventListener('mouseleave', function() {
+                    el.style.background = '';
+                    el.style.transform  = '';
+                });
+            });
 
             if (dots) {
                 dots.innerHTML = Array.from({length: totalPages}, function(_, i) {
-                    return '<div onclick="goLauncherPage(' + i + ')" style="' +
-                        'width:' + (i === launcherPage ? 16 : 6) + 'px;height:6px;border-radius:3px;cursor:pointer;' +
-                        'background:' + (i === launcherPage ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.35)') + ';' +
-                        'transition:all 250ms ease;"></div>';
+                    return `<div onclick="goLauncherPage(${i})" style="
+                        width:${i === launcherPage ? 16 : 6}px;height:6px;border-radius:3px;cursor:pointer;
+                        background:${i === launcherPage ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.35)'};
+                        transition:all 250ms ease;"></div>`;
                 }).join('');
             }
         }
@@ -6429,6 +6915,105 @@
                 ]));
             }
         })();
+
+        /* ======= MAIL APP LOGIC ======= */
+        const mailDb = {
+            inbox: [
+                { id: 1, from: 'GitHub', sub: 'New pull request on NebulaOS', time: '9:41 AM', body: 'Hi Mohit,<br><br>A new pull request #12 has been opened in your repository <b>NebulaOS</b>.<br>Please review the changes when you have a moment.<br><br>— GitHub Team' },
+                { id: 2, from: 'Google', sub: 'Security alert: New sign-in', time: 'Yesterday', body: 'We noticed a new login to your Google Account from a Windows device.<br>If this was you, no action is needed.' },
+                { id: 3, from: 'YouTube', sub: 'Your weekly digest is ready', time: 'Mon', body: 'Here are the top trending videos in Web Development and UI Design.<br>Watch them now on YouTube.' }
+            ],
+            starred: [
+                { id: 4, from: 'Offer Letter', sub: 'Welcome to Google!', time: 'Last Week', body: 'Dear Mohit,<br><br>We are thrilled to offer you the position of Senior Frontend Engineer.<br>See attached details.' }
+            ]
+        };
+        let activeMailbox = 'inbox';
+        let activeMailId = null;
+
+        window.initMailApp = function() {
+            renderMailApp();
+        };
+
+        function renderMailApp() {
+            const container = document.getElementById('mail-container');
+            if(!container) return;
+            
+            const mails = mailDb[activeMailbox] || [];
+            
+            container.innerHTML = `<div style="display:flex;height:100%;font-family:-apple-system,sans-serif;width:100%;">
+                <div style="width:200px;background:rgba(255,255,255,0.04);border-right:0.5px solid rgba(255,255,255,0.1);padding:12px 0;">
+                    <div style="padding:8px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);letter-spacing:.05em;">MAILBOXES</div>
+                    ${[['inbox','📥','Inbox', mailDb.inbox.length],['starred','⭐','Starred', mailDb.starred.length]].map(([id,ic,nm,cnt])=>`
+                        <div onclick="switchMailbox('${id}')" style="display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;border-radius:6px;margin:0 6px;background:${activeMailbox===id?'rgba(255,255,255,0.1)':'transparent'}" 
+                            onmouseenter="if('${activeMailbox}'!=='${id}')this.style.background='rgba(255,255,255,0.06)'" 
+                            onmouseleave="if('${activeMailbox}'!=='${id}')this.style.background='none'">
+                            <span>${ic}</span><span style="flex:1;font-size:13px;">${nm}</span>
+                            ${cnt?`<span style="background:#007aff;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;">${cnt}</span>`:''}
+                        </div>`).join('')}
+                </div>
+                <div style="width:280px;border-right:0.5px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;background:rgba(255,255,255,0.02);">
+                    <div style="padding:12px 16px;border-bottom:0.5px solid rgba(255,255,255,0.1);font-weight:600;font-size:14px;text-transform:capitalize;">${activeMailbox}</div>
+                    <div style="flex:1;overflow-y:auto;">
+                        ${mails.map(m=>`
+                            <div onclick="openMail(${m.id})" style="padding:12px 16px;border-bottom:0.5px solid rgba(255,255,255,0.06);cursor:pointer;background:${activeMailId===m.id?'rgba(10,132,255,0.2)':'transparent'}"
+                                onmouseenter="if(${activeMailId}!==${m.id})this.style.background='rgba(255,255,255,0.05)'"
+                                onmouseleave="if(${activeMailId}!==${m.id})this.style.background='transparent'">
+                                <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                                    <span style="font-weight:600;font-size:13px;color:${activeMailId===m.id?'#fff':'inherit'}">${m.from}</span>
+                                    <span style="font-size:11px;color:rgba(255,255,255,0.4);">${m.time}</span>
+                                </div>
+                                <div style="font-size:13px;margin-bottom:2px;font-weight:${activeMailId===m.id?'500':'normal'}">${m.sub}</div>
+                                <div style="font-size:12px;color:rgba(255,255,255,0.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.body.replace(/<[^>]+>/g,'')}</div>
+                            </div>
+                        `).join('')}
+                        ${mails.length===0?'<div style="padding:20px;text-align:center;color:rgba(255,255,255,0.4);font-size:13px;">No messages</div>':''}
+                    </div>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;background:#1e1e1e;" id="mail-view-pane">
+                    <div style="flex:1;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:14px;">Select a message to view</div>
+                </div>
+            </div>`;
+            
+            if (activeMailId) openMail(activeMailId);
+        }
+
+        window.switchMailbox = function(box) {
+            activeMailbox = box;
+            activeMailId = null;
+            renderMailApp();
+        };
+
+        window.openMail = function(id) {
+            activeMailId = id;
+            const allMails = [...mailDb.inbox, ...mailDb.starred];
+            const mail = allMails.find(m => m.id === id);
+            
+            // Re-render list slightly to show active state
+            renderMailApp();
+            
+            if(!mail) return;
+            const pane = document.getElementById('mail-view-pane');
+            if(pane) {
+                pane.innerHTML = `
+                    <div style="padding:20px 24px;border-bottom:0.5px solid rgba(255,255,255,0.1);">
+                        <div style="font-size:20px;font-weight:600;margin-bottom:12px;">${mail.sub}</div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:36px;height:36px;border-radius:50%;background:#007aff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;">${mail.from.charAt(0)}</div>
+                                <div>
+                                    <div style="font-weight:600;font-size:14px;">${mail.from}</div>
+                                    <div style="font-size:12px;color:rgba(255,255,255,0.5);">To: Mohit Chauhan</div>
+                                </div>
+                            </div>
+                            <div style="font-size:12px;color:rgba(255,255,255,0.4);">${mail.time}</div>
+                        </div>
+                    </div>
+                    <div style="padding:24px;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.9);overflow-y:auto;flex:1;">
+                        ${mail.body}
+                    </div>
+                `;
+            }
+        };
 
         /* ======= NOTES APP LOGIC ======= */
         let notesDb = JSON.parse(localStorage.getItem('nebulaos_notes')) || [];
@@ -7674,8 +8259,108 @@
             }, 1500); // Simulate network delay
         };
 
+        /* ======= CODE RUNNER LOGIC ======= */
+        window.initCodeRunner = function() {}; // No setup required
+        window.crRunCode = async function() {
+            const lang = document.getElementById('cr-lang').value;
+            const code = document.getElementById('cr-code').value;
+            const out = document.getElementById('cr-output');
+            const status = document.getElementById('cr-status');
+
+            if(!code.trim()) { out.textContent = 'Please enter some code.'; return; }
+
+            status.textContent = 'Executing...';
+            out.textContent = '';
+            
+            // Piston API mapping
+            const langVersions = {
+                'javascript': { language: 'nodejs', version: '18.15.0' },
+                'python': { language: 'python', version: '3.10.0' },
+                'cpp': { language: 'c++', version: '10.2.0' },
+                'java': { language: 'java', version: '15.0.2' },
+                'ruby': { language: 'ruby', version: '3.0.1' }
+            };
+
+            try {
+                const res = await fetch('https://emkc.org/api/v2/piston/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        language: langVersions[lang].language,
+                        version: langVersions[lang].version,
+                        files: [{ content: code }]
+                    })
+                });
+                const data = await res.json();
+                status.textContent = 'Ready';
+                if (data.run && data.run.output) {
+                    out.textContent = data.run.output;
+                } else if (data.compile && data.compile.output) {
+                    out.textContent = 'Compile Error:\n' + data.compile.output;
+                } else {
+                    out.textContent = 'Execution failed. Check code syntax.';
+                }
+            } catch (err) {
+                status.textContent = 'Error';
+                out.textContent = 'Network or API error executing code:\n' + err.message;
+            }
+        };
+
+        /* ======= HTTP TESTER LOGIC ======= */
+        window.initHttpTester = function() {}; // No setup required
+        window.httpSend = async function() {
+            const method = document.getElementById('http-method').value;
+            const url = document.getElementById('http-url').value;
+            const headersStr = document.getElementById('http-headers').value;
+            const bodyStr = document.getElementById('http-body').value;
+            const statusEl = document.getElementById('http-status');
+            const out = document.getElementById('http-response');
+
+            if(!url) { out.textContent = 'Enter a valid URL'; return; }
+
+            statusEl.textContent = 'Sending...';
+            statusEl.style.color = '#fff; background:#007aff; border-radius:10px; padding:2px 8px;';
+            out.textContent = '';
+
+            let parsedHeaders = {};
+            try { if(headersStr.trim()) parsedHeaders = JSON.parse(headersStr); }
+            catch(err) { out.textContent = 'Invalid Headers JSON'; statusEl.textContent='Error'; return; }
+
+            const options = { method, headers: parsedHeaders };
+            if (method !== 'GET' && method !== 'HEAD' && bodyStr.trim()) {
+                options.body = bodyStr;
+            }
+
+            const startTime = Date.now();
+            try {
+                const res = await fetch(url, options);
+                const time = Date.now() - startTime;
+                
+                statusEl.textContent = `${res.status} ${res.statusText} (${time}ms)`;
+                statusEl.style.background = res.ok ? '#34c759' : '#ff3b30';
+                
+                const contentType = res.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await res.json();
+                    out.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    out.textContent = await res.text();
+                }
+            } catch (err) {
+                statusEl.textContent = 'FAILED';
+                statusEl.style.background = '#ff3b30';
+                out.textContent = 'Request Failed:\n' + err.message + '\n\nMake sure the server supports CORS and the URL is correct.';
+            }
+        };
     </script>
+    <script src="feature-catalog-core.js"></script>
+    <script src="catalog-apps.js"></script>
+    <script src="games-center.js"></script>
+    <script src="desktop-enhancements.js"></script>
+    <script src="feature-lab.js"></script>
 
 </body>
 
 </html>
+
+
